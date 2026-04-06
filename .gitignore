@@ -1,0 +1,83 @@
+# ============================================================
+#  BullLens — .gitignore
+#  Agent 1 may add additional paths without question.
+# ============================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment / secrets
+.env
+*.env
+.env.*
+!.env.example
+
+# Flask / runtime
+instance/
+flask_session/
+*.log
+
+# ML model artifacts (large binary files — regenerate via training)
+bulllens/ml_model/artifacts/
+bulllens/ml/artifacts/
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.h5
+*.onnx
+*.safetensors
+
+# ML prediction output images
+bulllens/static/ml_preds/
+!bulllens/static/ml_preds/.gitkeep
+
+# Data / cache
+yfinance.cache
+*.cache
+*.db-shm
+*.db-wal
+
+# Historical stock data (large archive — available separately)
+archive/
+tmp/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# IDE / tooling
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build outputs (if ever added)
+dist/
+build/
+*.egg-info/
+node_modules/
+
+# Testing / coverage
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+*.xml
+
+# Jupyter notebooks (output cells)
+.ipynb_checkpoints/

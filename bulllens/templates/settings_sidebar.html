@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - BullLens</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 448px;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .avatar i {
+            color: white;
+            font-size: 24px;
+        }
+
+        .header-text h1 {
+            color: #f1f5f9;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .header-text p {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        /* Search Bar */
+        .search-container {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 16px 10px 40px;
+            background: rgba(51, 65, 85, 0.5);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .search-input::placeholder {
+            color: #64748b;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(51, 65, 85, 0.8);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Settings List */
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .settings-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .settings-list::-webkit-scrollbar-track {
+            background: rgba(51, 65, 85, 0.2);
+            border-radius: 4px;
+        }
+
+        .settings-list::-webkit-scrollbar-thumb {
+            background: rgba(71, 85, 105, 0.5);
+            border-radius: 4px;
+        }
+
+        .settings-list::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 0.7);
+        }
+
+        /* Setting Item */
+        .setting-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            width: 100%;
+            border: none;
+        }
+
+        .setting-item:hover {
+            background: rgba(51, 65, 85, 0.5);
+            border-color: rgba(71, 85, 105, 0.5);
+        }
+
+        .setting-item.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .setting-icon {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: rgba(71, 85, 105, 0.5);
+            color: #cbd5e1;
+            font-size: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .setting-item:hover .setting-icon {
+            background: rgba(71, 85, 105, 0.7);
+            color: #f1f5f9;
+        }
+
+        .setting-item.active .setting-icon {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        /* Setting Content */
+        .setting-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .setting-title {
+            color: #f1f5f9;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            transition: color 0.2s ease;
+        }
+
+        .setting-item:hover .setting-title {
+            color: #60a5fa;
+        }
+
+        .setting-item.active .setting-title {
+            color: #93c5fd;
+        }
+
+        .setting-subtitle {
+            color: #94a3b8;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        /* Arrow Indicator */
+        .arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            color: #64748b;
+            opacity: 0;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .setting-item:hover .arrow,
+        .setting-item.active .arrow {
+            opacity: 1;
+            color: #94a3b8;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #475569, transparent);
+            margin: 16px 0;
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            width: 100%;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(220, 38, 38, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .logout-btn:hover {
+            background: rgba(220, 38, 38, 0.25);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .logout-icon {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            font-size: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover .logout-icon {
+            background: rgba(239, 68, 68, 0.4);
+            color: #fecaca;
+        }
+
+        .logout-title {
+            color: #fca5a5;
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            transition: color 0.2s ease;
+        }
+
+        .logout-btn:hover .logout-title {
+            color: #fecaca;
+        }
+
+        .logout-subtitle {
+            color: #f87171;
+            font-size: 13px;
+            opacity: 0.7;
+        }
+
+        /* Footer */
+        .footer {
+            border-top: 1px solid rgba(71, 85, 105, 0.3);
+            padding-top: 16px;
+            text-align: center;
+        }
+
+        .footer-version {
+            color: #64748b;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .footer-app {
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        /* No Results */
+        .no-results {
+            text-align: center;
+            padding: 32px 16px;
+            color: #64748b;
+        }
+
+        .no-results i {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .no-results p {
+            font-size: 14px;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container {
+                max-width: 100%;
+                border-radius: 12px;
+            }
+
+            .settings-list {
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="header-text">
+                <h1>{{ username }}</h1>
+                <p>Manage your account</p>
+            </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-input" 
+                placeholder="Search settings..."
+            >
+        </div>
+
+        <!-- Settings List -->
+        <div class="settings-list" id="settingsList"></div>
+
+        <!-- Divider -->
+        <div class="divider"></div>
+
+        <!-- Logout Button -->
+        <button class="logout-btn" onclick="handleLogout()">
+            <div class="logout-icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <div>
+                <div class="logout-title">Log out</div>
+                <div class="logout-subtitle">Sign out of your account</div>
+            </div>
+        </button>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-version">BullLens v1.0.0</div>
+            <div class="footer-app">Stock Market Predictor</div>
+        </div>
+    </div>
+
+    <script>
+        // Settings data
+        const settings = [
+            {
+                id: 'profile',
+                icon: 'fas fa-user',
+                title: 'Profile',
+                subtitle: 'Name, email, account info',
+                color: '#3b82f6'
+            },
+            {
+                id: 'predictions',
+                icon: 'fas fa-chart-line',
+                title: 'Prediction Preferences',
+                subtitle: 'Mode, confidence threshold, risk level',
+                color: '#10b981'
+            },
+            {
+                id: 'market',
+                icon: 'fas fa-globe',
+                title: 'Market Selection',
+                subtitle: 'NSE, BSE, crypto, US stocks',
+                color: '#8b5cf6'
+            },
+            {
+                id: 'notifications',
+                icon: 'fas fa-bell',
+                title: 'Notifications',
+                subtitle: 'Buy/sell alerts, prediction signals',
+                color: '#f97316'
+            },
+            {
+                id: 'appearance',
+                icon: 'fas fa-palette',
+                title: 'Appearance',
+                subtitle: 'Theme, chart style',
+                color: '#ec4899'
+            },
+            {
+                id: 'watchlist',
+                icon: 'fas fa-star',
+                title: 'Watchlist Settings',
+                subtitle: 'Favorite stocks, tracking',
+                color: '#eab308'
+            },
+            {
+                id: 'security',
+                icon: 'fas fa-lock',
+                title: 'Privacy & Security',
+                subtitle: 'Password, login protection',
+                color: '#ef4444'
+            },
+            {
+                id: 'help',
+                icon: 'fas fa-circle-question',
+                title: 'Help & Feedback',
+                subtitle: 'Help center, report issue',
+                color: '#06b6d4'
+            }
+        ];
+
+        let activeItem = 'profile';
+        let searchQuery = '';
+
+        // Render settings
+        function renderSettings() {
+            const settingsList = document.getElementById('settingsList');
+            const filtered = settings.filter(s =>
+                s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                settingsList.innerHTML = `
+                    <div class="no-results">
+                        <div><i class="fas fa-search"></i></div>
+                        <p>No settings found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            settingsList.innerHTML = filtered.map(setting => `
+                <button 
+                    class="setting-item ${activeItem === setting.id ? 'active' : ''}"
+                    onclick="handleSettingClick('${setting.id}')"
+                    data-id="${setting.id}"
+                >
+                    <div class="setting-icon" style="background: ${setting.color}20; color: ${setting.color};">
+                        <i class="${setting.icon}"></i>
+                    </div>
+                    <div class="setting-content">
+                        <div class="setting-title">${setting.title}</div>
+                        <div class="setting-subtitle">${setting.subtitle}</div>
+                    </div>
+                    <div class="arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </button>
+            `).join('');
+        }
+
+        // Handle setting click
+        function handleSettingClick(id) {
+            activeItem = id;
+            console.log('Clicked setting:', id);
+            renderSettings();
+        }
+
+        // Handle search
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            renderSettings();
+        });
+
+        // Handle logout
+        function handleLogout() {
+            if (confirm('Are you sure you want to log out?')) {
+                console.log('Logging out...');
+                // Replace with your logout API call
+                // window.location.href = '/logout';
+            }
+        }
+
+        // Initial render
+        renderSettings();
+    </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# ML Artifacts and Caches
+ml/artifacts/
+yfinance.cache*
+*.pkl
+*.joblib
+*.h5
+*.pt
+
+# Database
+bulllens_db.db
+*.sqlite
+*.sqlite3
+
+# Static files
+static/ml_preds/
+static/*.png
+static/*.jpg
+static/*.jpeg
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Archive (data only, do not track large files)
+archive/HISTORICAL_DATA/
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/

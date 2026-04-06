@@ -1,0 +1,905 @@
+================================================================================
+BULLLENS PROJECT - COMPREHENSIVE CODE REPORT
+================================================================================
+Stock Market Predictor with FastAPI Backend & ML Models
+Date Generated: March 28, 2026
+Framework: FastAPI + YFinance + Scikit-Learn + YOLOv8
+
+================================================================================
+PROJECT STRUCTURE
+================================================================================
+
+bulllens/
+  ├── app.py                          # Main FastAPI application factory
+  ├── database.py                     # MySQL database connection & schema
+  ├── models/
+  │   └── watchlist_model.py          # Data access layer for watchlist
+  ├── routes/
+  │   ├── auth_routes.py              # Authentication endpoints
+  │   ├── stock_routes.py             # Stock data & watchlist endpoints
+  │   └── ml_routes.py                # ML prediction endpoints
+  ├── ml_model/
+  │   ├── predict.py                  # Placeholder & Vision model interface
+  │   ├── price_model.py              # Price prediction (Linear Regression)
+  │   ├── vision_model.py             # YOLO vision inference
+  │   └── risk_model.py               # Volatility prediction (Random Forest)
+  ├── static/                         # Frontend assets & ML predictions output
+  ├── templates/                      # HTML templates (Jinja2)
+  ├── sql/
+  │   └── schema.sql                  # Database schema DDL
+  └── requirements.txt                # Python dependencies
+
+================================================================================
+SECTION 1: MAIN APPLICATION (app.py)
+================================================================================
+
+FILE: bulllens/app.py
+PURPOSE: FastAPI application factory with startup/shutdown event handlers
+
+KEY COMPONENTS:
+
+1. IMPORTS & SETUP
+   - FastAPI, CORSMiddleware, StaticFiles, Jinja2Templates
+   - dotenv for environment configuration
+   - bcrypt for password hashing
+   - Custom database module
+
+2. STARTUP FUNCTIONS
+
+   async def provision_demo_account()
+   ─────────────────────────────────
+   - Auto-creates demo account on server startup
+   - Username: demo, Password: demo1234 (environment configurable)
+   - Uses bcrypt with 12 rounds for hashing
+   - Checks if demo account already exists before creating
+
+3. LIFESPAN CONTEXT MANAGER
+
+   @asynccontextmanager
+   async def lifespan(app: FastAPI)
+   ────────────────────────────────
+   - Runs init_db() on startup to initialize schema
+   - Provisions demo account
+   - Logs startup and shutdown events
+   - Error handling with informative messages
+
+4. APP FACTORY
+
+   def create_app() -> FastAPI
+   ──────────────────────────
+   - Creates FastAPI instance with title, description, version
+   - Configures CORS middleware (origins from .env)
+   - Mounts static files directory
+   - Registers routers:
+     * auth_routes (prefix="")
+     * stock_routes (prefix="/api")
+     * ml_routes (prefix="/ml")
+
+5. ROOT ENDPOINTS
+
+   GET / (root)
+   - Redirects unauthenticated users to /register
+   - Redirects authenticated users to /dashboard
+
+   GET /register
+   - Renders registration page (register.html)
+   - Checks if already logged in, redirects to dashboard
+
+   GET /login
+   - Renders login page (login.html)
+   - Checks if already logged in, redirects to dashboard
+
+   GET /dashboard
+   - Protected endpoint (requires session_user_id cookie)
+   - Renders main dashboard (index.html)
+   - Passes username & asset version for cache busting
+
+   GET /health
+   - Health check endpoint
+   - Returns {"status": "healthy", "service": "BullLens API"}
+
+6. ENTRY POINT
+
+   if __name__ == "__main__":
+   - Reads UVICORN_ENV (development/production)
+   - Reads PORT (default 8000)
+   - Runs with reload=True in development mode
+
+ENVIRONMENT VARIABLES:
+- DB_HOST (default: 127.0.0.1)
+- DB_PORT (default: 3306)
+- DB_USER (default: root)
+- DB_PASSWORD (default: root)
+- DB_NAME (default: bulllens_db)
+- CORS_ORIGINS (JSON array, default: localhost:3000, localhost:8000)
+- DEMO_USERNAME (default: demo)
+- DEMO_PASSWORD (default: demo1234)
+- PORT (default: 8000)
+- UVICORN_ENV (default: development)
+
+
+================================================================================
+SECTION 2: DATABASE MODULE (database.py)
+================================================================================
+
+FILE: bulllens/database.py
+PURPOSE: MySQL connection management and schema initialization
+
+KEY FUNCTIONS:
+
+1. get_db_config() -> dict
+   ──────────────────────
+   - Loads database credentials from .env
+   - Returns dict with host, port, user, password, database
+   - Sets charset to utf8mb4, collation utf8mb4_unicode_ci
+
+2. get_connection() -> MySQLConnectionAbstract
+   ───────────────────────────────────────────
+   - Establishes new MySQL connection using get_db_config()
+   - Uses mysql-connector-python library
+   - Raises Error if connection fails
+
+3. @contextmanager get_db_cursor(commit: bool = True)
+   ──────────────────────────────────────────────────
+   - Context manager for safe database operations
+   - Auto-commits on success if commit=True
+   - Auto-rollbacks on error
+   - Returns cursor with dictionary=True (dict rows)
+
+   USAGE:
+   with get_db_cursor() as cursor:
+       cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+       rows = cursor.fetchall()
+
+4. init_db() -> None
+   ────────────────
+   - Reads sql/schema.sql
+   - Executes DDL statements to create tables
+   - Called in FastAPI lifespan startup
+   - Raises FileNotFoundError if schema.sql missing
+
+SCHEMA CREATES:
+- users table (user_id, username, email, password_hash)
+- stocks table (stock_id, symbol, company_name, exchange)
+- watchlist table (watchlist_id, user_id, stock_id, added_at)
+
+
+================================================================================
+SECTION 3: AUTHENTICATION ROUTES (routes/auth_routes.py)
+================================================================================
+
+FILE: bulllens/routes/auth_routes.py
+PURPOSE: User authentication, registration, logout
+
+KEY PYDANTIC MODELS:
+
+1. LoginRequest
+   ────────────
+   - username: str
+   - password: str
+
+2. RegisterRequest
+   ───────────────
+   - username: str
+   - email: str (validated with regex)
+   - password: str
+
+3. AuthResponse
+   ────────────
+   - status: str (ok/error)
+   - username: str
+   - user_id: int
+
+HELPER FUNCTIONS:
+
+1. get_user_by_username(username: str) -> dict | None
+   ──────────────────────────────────────────────────
+   - Queries users table by username
+   - Returns dict with user_id, username, email, password_hash
+   - Returns None if not found
+
+2. hash_password(password: str) -> str
+   ──────────────────────────────────
+   - Uses bcrypt.hashpw with 12 rounds
+   - Returns UTF-8 decoded hash string
+
+3. verify_password(password: str, password_hash: str) -> bool
+   ────────────────────────────────────────────────────────
+   - Uses bcrypt.checkpw for comparison
+   - Returns True if match, False otherwise
+
+API ENDPOINTS:
+
+1. POST /login
+   ───────────
+   - Request: LoginRequest (username, password)
+   - Returns: AuthResponse
+   - Sets session cookies:
+     * session_user_id (httponly=True)
+     * session_username (httponly=False)
+   - Raises 401 if invalid credentials
+
+2. POST /logout
+   ────────────
+   - Deletes session cookies
+   - Returns {"status": "ok", "message": "Logged out"}
+
+3. POST /register
+   ───────────────
+   - Request: RegisterRequest
+   - Returns: user_id, username, message
+   - Status Code: 201 Created
+   - Raises 409 if username/email exists
+   - Hashes password before storing
+
+4. GET /me
+   ────────
+   - Requires session_username cookie
+   - Returns: user_id, username, email
+   - Raises 401 if not authenticated
+
+
+================================================================================
+SECTION 4: STOCK DATA ROUTES (routes/stock_routes.py)
+================================================================================
+
+FILE: bulllens/routes/stock_routes.py
+PURPOSE: Historical stock data from yfinance, watchlist management
+
+CONFIGURATION:
+- ARCHIVE_DIR: Path to local stock data cache (default: archive/)
+- YF_CACHE_EXPIRE: Seconds for cache (default: 3600)
+- YF_TIMEOUT: Request timeout in seconds (default: 10)
+
+HELPER FUNCTIONS:
+
+1. normalize_symbol(symbol: str) -> str
+   ──────────────────────────────────
+   - Converts to uppercase
+   - Appends .NS for NSE if not present
+   - Example: "RELIANCE" → "RELIANCE.NS"
+
+2. get_yfinance_data(symbol: str, period: str = "3mo") -> dict
+   ───────────────────────────────────────────────────────────
+   - Fetches OHLCV data from yfinance
+   - Returns dict with:
+     * symbol: normalized symbol
+     * latest_price: current close price
+     * change_pct: percent change from previous close
+     * history: list of OHLCV records
+
+PYDANTIC MODELS:
+
+1. AddWatchlistRequest
+   ───────────────────
+   - symbol: str (required)
+   - company_name: str (optional)
+   - exchange: str (default: "NSE")
+
+API ENDPOINTS (all prefixed with /api):
+
+1. GET /stock-data/{symbol}
+   ───────────────────────
+   - Fetches 3-month historical data
+   - Returns normalized symbol, latest price, history
+
+2. GET /watchlist
+   ──────────────
+   - Requires session_user_id cookie
+   - Returns user's full watchlist with live prices
+
+3. POST /add-watchlist
+   ──────────────────
+   - Request: AddWatchlistRequest
+   - Adds stock to user's watchlist
+   - Creates stock entry if not exists
+
+4. DELETE /remove-watchlist/{id}
+   ────────────────────────────
+   - Removes watchlist entry
+   - Requires session_user_id cookie
+
+
+================================================================================
+SECTION 5: ML PREDICTION ROUTES (routes/ml_routes.py)
+================================================================================
+
+FILE: bulllens/routes/ml_routes.py
+PURPOSE: ML model inference endpoints (volatility, price, vision)
+
+CONFIGURATION:
+- ML_ARTIFACTS_DIR: Path for trained model files (default: ml/artifacts)
+
+PYDANTIC MODELS:
+
+1. VolatilityPredictRequest
+   ───────────────────────
+   - symbol: str
+   - horizon: int = 5 (2-60 days)
+
+2. VolatilityPredictResponse
+   ────────────────────────
+   - symbol: str
+   - horizon: int
+   - predicted_volatility: float
+   - cv_score: float (cross-validation score)
+   - unit: str (percentage)
+
+3. PricePredictRequest
+   ──────────────────
+   - symbol: str
+   - horizon: int = 5
+
+4. ConfidenceInterval
+   ─────────────────
+   - low: float
+   - high: float
+
+5. PricePredictResponse
+   ───────────────────
+   - symbol: str
+   - predicted_price: float
+   - confidence_interval: ConfidenceInterval
+   - horizon_days: int
+   - model_used: str
+
+6. VisionPredictResponse
+   ────────────────────
+   - status: str
+   - detections: int (count of detected objects)
+   - inference_time_ms: float
+   - result_image_url: str | None
+   - detections_list: list[dict]
+
+API ENDPOINTS (all prefixed with /ml):
+
+1. POST /ml/volatility-predict
+   ───────────────────────────
+   - Predicts stock volatility for given horizon
+   - Uses Random Forest with 5-fold cross-validation
+   - Features: 10-day log returns, momentum, rolling volatility
+   - Raises 400 if invalid horizon
+   - Raises 422 if model not trained
+   - Raises 503 if data fetch fails
+
+2. POST /ml/volatility-train
+   ──────────────────────────
+   - Trains volatility model for specified horizon
+   - Uses RandomForestRegressor with TimeSeriesSplit
+   - Saves model to ml/artifacts/vol_model_h{horizon}.joblib
+
+3. POST /ml/price-predict
+   ──────────────────────
+   - Predicts next price for stock
+   - Uses Linear Regression on 90-day history
+   - Returns confidence interval (95% margin)
+
+4. POST /ml/vision-predict
+   ───────────────────────
+   - Runs YOLOv8 on uploaded image
+   - Detects objects/patterns in charts
+   - Returns detection count and details
+
+
+================================================================================
+SECTION 6: WATCHLIST DATA ACCESS (models/watchlist_model.py)
+================================================================================
+
+FILE: bulllens/models/watchlist_model.py
+PURPOSE: Data access layer for watchlist operations
+
+KEY FUNCTIONS:
+
+1. get_all_watchlist(user_id: int = 1) -> list[dict]
+   ────────────────────────────────────────────────
+   - Returns all stocks in watchlist for user_id
+   - Joins watchlist → stocks tables
+   - Returns: watchlist_id, stock_id, symbol, company_name, exchange, added_at
+   - Ordered by added_at DESC (newest first)
+
+2. add_to_watchlist(symbol: str, company_name: str, exchange: str, user_id: int = 1) -> dict
+   ──────────────────────────────────────────────────────────────────────────────────────
+   - Adds stock to user's watchlist
+   - Inserts stock into stocks table if not exists (INSERT IGNORE)
+   - Then inserts watchlist row
+   - Returns dict with watchlist_id, stock_id
+   - Raises IntegrityError if duplicate
+   - Auto-rollback on error
+
+IMPLEMENTATION NOTES:
+- Opens fresh connection for each operation
+- Simple single-user environment (local)
+- Connection pool can be swapped in later for production
+
+
+================================================================================
+SECTION 7: PRICE PREDICTION MODEL (ml_model/price_model.py)
+================================================================================
+
+FILE: bulllens/ml_model/price_model.py
+PURPOSE: Linear Regression-based price prediction
+
+KEY FUNCTION:
+
+predict_price(symbol: str, horizon: int = 5) -> dict
+──────────────────────────────────────────────────
+
+PROCESS:
+1. Normalizes symbol (adds .NS if needed)
+2. Fetches 90 days of historical data from yfinance
+3. Extracts close prices
+4. Creates time-series features:
+   - X: array of time indices (0, 1, 2, ..., n)
+   - y: array of close prices
+5. Trains LinearRegression model
+6. Predicts price at (current_day + horizon)
+7. Calculates 95% confidence interval
+
+OUTPUT:
+- predicted_price: float (ensured positive)
+- confidence_interval: [lower_bound, upper_bound]
+- model_used: "linear_regression"
+- error: str (if failed)
+
+EDGE CASES HANDLED:
+- Insufficient data (< 30 days): returns error
+- Negative predictions: returns error
+- NaN predictions: returns error
+- Positive check on confidence bounds
+
+
+================================================================================
+SECTION 8: VOLATILITY PREDICTION MODEL (ml_model/risk_model.py)
+================================================================================
+
+FILE: bulllens/ml_model/risk_model.py
+PURPOSE: Random Forest volatility forecasting
+
+KEY FUNCTIONS:
+
+1. _artifact_path(horizon: int = 5) -> str
+   ──────────────────────────────────────
+   - Returns path to trained model file
+   - Models stored per horizon: vol_model_h5.joblib, vol_model_h10.joblib, etc.
+
+2. _load_training_df() -> pd.DataFrame
+   ──────────────────────────────────
+   - Reads archive/stocks_df.csv
+   - Parses Date column to datetime
+
+3. _features_from_df(df) -> tuple(df, list)
+   ────────────────────────────────────────
+   - Computes features from price data:
+     * ret1, ret5, ret10: 1/5/10-day returns
+     * mom5, mom10: 5/10-day momentum
+     * vol5, vol10, vol20: 5/10/20-day rolling volatility
+     * vchg: volume change
+   - Returns augmented dataframe and list of feature names
+
+4. _target_from_df(df, horizon) -> pd.Series
+   ──────────────────────────────────────────
+   - Computes target: forward-looking rolling volatility
+   - Shifts returns forward and calculates rolling std
+
+5. train_volatility_model(horizon=5, n_splits=5, random_state=42, 
+                          n_estimators=500, max_depth=10) -> dict
+   ─────────────────────────────────────────────────────────────
+   HYPERPARAMETERS:
+   - horizon: forecast horizon (days)
+   - n_splits: time-series CV folds
+   - random_state: reproducibility
+   - n_estimators: trees in forest (500)
+   - max_depth: max tree depth (10)
+
+   PROCESS:
+   1. Loads training data from archive/stocks_df.csv
+   2. Computes features and target
+   3. Splits data using TimeSeriesSplit (respects time order)
+   4. Trains RandomForestRegressor with StandardScaler pipeline
+   5. Calculates MAE on each fold using cross_val_score
+   6. Refits on entire dataset
+   7. Saves to ml/artifacts/vol_model_h{horizon}.joblib
+   8. Returns mean/std MAE and other stats
+
+6. predict_volatility(symbol: str, horizon: int = 5) -> dict
+   ──────────────────────────────────────────────────────
+   - Loads trained model for given horizon
+   - Fetches recent price data for symbol
+   - Computes features
+   - Runs inference
+   - Returns predicted_volatility, cv_score, unit
+
+
+================================================================================
+SECTION 9: VISION MODEL (ml_model/vision_model.py)
+================================================================================
+
+FILE: bulllens/ml_model/vision_model.py
+PURPOSE: YOLOv8 object detection on chart images
+
+CONFIGURATION:
+- PREDICTIONS_DIR: static/ml_preds/ (output directory)
+
+KEY FUNCTIONS:
+
+1. load_yolo_model() -> YOLO
+   ─────────────────────────
+   - Lazy-loads YOLOv8 nano model (yolov8n.pt)
+   - Caches in global _yolo_model
+   - Auto-downloads if not present
+   - Raises FileNotFoundError if weights unavailable
+
+2. run_yolo_inference(image_bytes: bytes) -> dict
+   ──────────────────────────────────────────────
+   - Accepts image as bytes (PNG, JPG, etc.)
+   - Saves to temporary file
+   - Runs YOLOv8 inference
+   - Returns:
+     * detections: count of detected objects
+     * inference_time_ms: float
+     * detections_list: [{label, confidence, bbox}, ...]
+   - Clean up temp files after
+
+DETECTION OUTPUT:
+- Each detection includes:
+  * label: class label from COCO dataset
+  * confidence: 0-1 probability
+  * bbox: [x1, y1, x2, y2] coordinates
+
+
+================================================================================
+SECTION 10: PREDICTION INTERFACE (ml_model/predict.py)
+================================================================================
+
+FILE: bulllens/ml_model/predict.py
+PURPOSE: Unified prediction interface and vision model wrapper
+
+PLACEHOLDER FUNCTIONS:
+
+1. predict(symbol: str) -> dict
+   ───────────────────────────
+   STATUS: Stub (not yet implemented)
+   FUTURE: Replace with LSTM/Prophet model
+   RETURNS:
+   - symbol
+   - predicted_price or None
+   - confidence (0-1) or None
+   - model_version
+   - status message
+
+IMPLEMENTATION NOTES:
+- Serves as template for future ML models
+- Maintains consistent interface for API routes
+- Allows swapping real models without API changes
+
+YOLO VISION WRAPPER:
+
+1. _load_yolo_model() -> YOLO
+   ──────────────────────────
+   - Loads YOLOv8 from ultralytics
+   - Tries local model first
+   - Falls back to HuggingFace model (foduucom/stockmarket-future-prediction)
+
+2. vision_predict(source: str, save: bool = True, project_dir: str = None) -> dict
+   ────────────────────────────────────────────────────────────────────────────
+   - Runs YOLOv8 on image/video source
+   - Saves results to project_dir
+   - Returns: status, detections count, save_dir
+
+
+================================================================================
+SECTION 11: REQUIREMENTS & DEPENDENCIES
+================================================================================
+
+FILE: bulllens/requirements.txt
+
+CORE FRAMEWORK:
+- fastapi >= 0.100              # Web framework
+- uvicorn[standard] >= 0.20     # ASGI server
+- python-dotenv >= 1.0          # Environment configuration
+
+DATABASE:
+- mysql-connector-python >= 8.0 # MySQL driver
+
+AUTHENTICATION & SECURITY:
+- bcrypt >= 4.0                 # Password hashing
+- passlib[bcrypt] >= 1.7        # Password context utilities
+
+API & DATA VALIDATION:
+- pydantic >= 2.0               # Schema validation
+- email-validator >= 2.0        # Email validation
+- python-multipart >= 0.0.6     # Form data parsing
+- httpx >= 0.20                 # Async HTTP client
+- aiofiles >= 23                # Async file operations
+
+DATA & ML:
+- yfinance >= 0.2               # Yahoo Finance data
+- requests-cache >= 1.2         # HTTP request caching
+- pandas >= 2.0                 # Data manipulation
+- scikit-learn >= 1.4           # ML algorithms
+- statsmodels >= 0.14           # Statistical models
+- ultralytics >= 8.0            # YOLOv8 vision
+- pillow >= 10                  # Image processing
+
+
+================================================================================
+SECTION 12: DATABASE SCHEMA (sql/schema.sql)
+================================================================================
+
+TABLES CREATED:
+
+1. users
+   ─────
+   - user_id: INT PRIMARY KEY AUTO_INCREMENT
+   - username: VARCHAR(255) UNIQUE NOT NULL
+   - email: VARCHAR(255) UNIQUE NOT NULL
+   - password_hash: VARCHAR(255) NOT NULL
+   - created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+2. stocks
+   ──────
+   - stock_id: INT PRIMARY KEY AUTO_INCREMENT
+   - symbol: VARCHAR(50) UNIQUE NOT NULL
+   - company_name: VARCHAR(255)
+   - exchange: VARCHAR(50) DEFAULT 'NSE'
+   - created_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+3. watchlist
+   ──────────
+   - watchlist_id: INT PRIMARY KEY AUTO_INCREMENT
+   - user_id: INT NOT NULL (FK → users)
+   - stock_id: INT NOT NULL (FK → stocks)
+   - added_at: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+   - UNIQUE KEY (user_id, stock_id)
+
+
+================================================================================
+SECTION 13: FRONTEND INTEGRATION
+================================================================================
+
+STATIC FILES:
+- static/css/        # Stylesheets
+- static/js/         # Frontend JavaScript
+- static/ml_preds/   # ML model predictions output
+
+TEMPLATES:
+- templates/index.html       # Main dashboard
+- templates/login.html       # Login page
+- templates/register.html    # Registration page
+
+TEMPLATE CONTEXT:
+- username: logged-in user (from cookie)
+- asset_version: cache-busting timestamp for JS/CSS
+
+
+================================================================================
+SECTION 14: PROJECT WORKFLOW
+================================================================================
+
+STARTUP SEQUENCE:
+
+1. server starts (uvicorn app:app)
+2. FastAPI lifespan startup triggered
+3. init_db() executes schema.sql
+4. provision_demo_account() creates demo user
+5. Server ready on http://0.0.0.0:8000
+
+USER FLOW:
+
+1. Unauthenticated:
+   GET / → Redirect to /register
+   
+2. Registration:
+   GET /register → Show register.html
+   POST /register → Insert user, return user_id
+   
+3. Login:
+   GET /login → Show login.html
+   POST /login → Check credentials, set session cookies
+   
+4. Dashboard:
+   GET /dashboard → Check session_user_id, show index.html
+   
+5. Stock Data:
+   GET /api/stock-data/RELIANCE → Fetch yfinance data
+   
+6. Watchlist:
+   GET /api/watchlist → List all user's stocks
+   POST /api/add-watchlist → Add stock to watchlist
+   DELETE /api/remove-watchlist/1 → Remove from watchlist
+   
+7. ML Predictions:
+   POST /ml/volatility-predict → Forecast volatility
+   POST /ml/price-predict → Forecast price
+   POST /ml/vision-predict → Detect patterns in image
+   
+8. Logout:
+   POST /logout → Clear session cookies
+
+
+================================================================================
+SECTION 15: ERROR HANDLING & VALIDATION
+================================================================================
+
+HTTP STATUS CODES:
+- 200 OK              # Successful GET
+- 201 Created         # Successful POST (register)
+- 303 See Other       # Redirects
+- 400 Bad Request     # Invalid input
+- 401 Unauthorized    # Invalid credentials
+- 409 Conflict        # Duplicate username/email
+- 422 Unprocessable   # Validation error
+- 500 Server Error    # DB/Model errors
+- 503 Unavailable     # External API failure
+
+PYDANTIC VALIDATION:
+- Email regex validation for RegisterRequest
+- Symbol length checks
+- Horizon range validation (2-60 days)
+
+DATABASE ERROR HANDLING:
+- Rollback on failed operations
+- Connection cleanup in finally blocks
+- Duplicate key handling (409 responses)
+
+ML MODEL ERROR HANDLING:
+- Graceful fallback if model weights missing
+- NaN/Inf checks on predictions
+- Insufficient data detection
+
+
+================================================================================
+SECTION 16: ENVIRONMENT CONFIGURATION
+================================================================================
+
+.env FILE VARIABLES:
+
+DATABASE:
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=root
+DB_NAME=bulllens_db
+
+SERVER:
+PORT=8000
+UVICORN_ENV=development
+
+CORS:
+CORS_ORIGINS=["http://localhost:3000", "http://localhost:8000"]
+
+DEMO ACCOUNT:
+DEMO_USERNAME=demo
+DEMO_PASSWORD=demo1234
+
+DATA CACHING:
+ARCHIVE_DIR=archive/
+YFINANCE_CACHE_EXPIRE=3600
+YFINANCE_TIMEOUT=10
+
+ML:
+ML_ARTIFACTS_DIR=ml/artifacts
+
+
+================================================================================
+SECTION 17: KEY ARCHITECTURAL DECISIONS
+================================================================================
+
+1. FASTAPI CHOICE
+   - Async-first, high performance
+   - Built-in OpenAPI documentation
+   - Excellent validation with Pydantic
+   - Great for ML workloads
+
+2. SESSION COOKIES
+   - Browser session management (expires on close)
+   - httponly flag for security
+   - samesite=lax for CSRF protection
+   - session_user_id only, session_username readable by JS
+
+3. DATABASE CONTEXT MANAGER
+   - Automatic connection cleanup
+   - Rollback on error
+   - Per-request isolation
+
+4. TIMEZONE-AGNOSTIC
+   - MySQL uses TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+   - Server timezone neutral
+
+5. SEPARATE ML ARTIFACTS PER HORIZON
+   - Models trained for different forecast horizons separately
+   - Allows independent model management
+
+6. LAZY-LOADED YOLO
+   - Global singleton pattern
+   - Downloaded on first request
+   - Reduces startup time
+
+
+================================================================================
+SECTION 18: DEPLOYMENT CONSIDERATIONS
+================================================================================
+
+PRODUCTION CHECKLIST:
+
+1. Security:
+   ✓ Use HTTPS (secure=True in cookies)
+   ✓ Regenerate bcrypt salt (increase rounds)
+   ✓ Environment variables for all secrets
+   ✓ SQL injection prevention (parameterized queries)
+   ✓ CORS restrictions (specific origins)
+
+2. Performance:
+   ✓ Connection pooling (swap get_connection for pool)
+   ✓ Cache yfinance responses
+   ✓ CDN for static files
+   ✓ DB indexes on frequently queried columns
+
+3. Monitoring:
+   ✓ Error logging
+   ✓ Request logging
+   ✓ Model performance tracking
+   ✓ Database slow query log
+
+4. Scaling:
+   ✓ Horizontal scaling with load balancer
+   ✓ Session store (Redis) if multi-instance
+   ✓ Separate ML inference service
+   ✓ Queue for long-running predictions
+
+
+================================================================================
+SECTION 19: TESTING FRAMEWORK
+================================================================================
+
+TEST FILES AVAILABLE:
+- conftest.py              # Pytest configuration
+- test_api_endpoints.py    # API integration tests
+- test_complete_workflow.py # End-to-end tests
+- test_watchlist_api.py    # Watchlist operations
+- test_frontend_structure.py # Frontend validation
+
+RUN TESTS:
+pytest -v              # Verbose output
+pytest --cov          # Coverage report
+pytest -k volatility  # Run specific tests
+
+
+================================================================================
+SECTION 20: QUICK START GUIDE
+================================================================================
+
+1. INSTALL DEPENDENCIES:
+   pip install -r requirements.txt
+
+2. CONFIGURE DATABASE:
+   Update .env with MySQL credentials
+   Ensure MySQL server is running
+
+3. START SERVER:
+   python -m uvicorn app:app --reload
+
+4. ACCESS APPLICATION:
+   Browser: http://localhost:8000
+   API Docs: http://localhost:8000/docs (Swagger)
+   ReDoc: http://localhost:8000/redoc
+
+5. DEMO ACCOUNT:
+   Username: demo
+   Password: demo1234
+
+6. TRAIN VOLATILITY MODEL:
+   POST /ml/volatility-train?horizon=5
+
+7. GET PREDICTION:
+   POST /ml/volatility-predict
+   {"symbol": "RELIANCE", "horizon": 5}
+
+
+================================================================================
+END OF REPORT
+================================================================================
+Generated: March 28, 2026
+Total Sections: 20
+Project: BullLens - Stock Market Prediction API
+Framework: FastAPI with ML Capabilities

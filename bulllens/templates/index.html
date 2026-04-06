@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BullLens – Smart NSE Stock Tracker with ML-powered predictions for beginner investors." />
+  <title>BullLens – NSE Stock Tracker</title>
+
+  <!-- ⚡ Apply saved theme BEFORE paint to prevent flash -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('bulllens_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+
+  <!-- Bootstrap 5 CSS (layout utilities only; no JS used) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Custom Design System -->
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- Mobile sidebar overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<div class="dashboard-layout">
+
+  <!-- ================================================================
+       SIDEBAR
+       ================================================================ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-icon">
+        <i class="fa-solid fa-layer-group text-white"
+           style="font-size:0.85rem;margin:auto;display:flex;height:100%;align-items:center;justify-content:center;"></i>
+      </div>
+      BullLens
+    </div>
+
+    <ul class="nav-links" id="main-nav">
+      <li class="nav-item active" data-hash="dashboard" data-view="view-dashboard">
+        <i class="fa-solid fa-table-cells-large"></i> Dashboard
+      </li>
+      <li class="nav-item" data-hash="watchlist" data-view="view-watchlist">
+        <i class="fa-solid fa-star"></i> Watchlist
+      </li>
+      <li class="nav-item" data-hash="ml" data-view="view-ml">
+        <i class="fa-solid fa-robot"></i> ML Predictions
+      </li>
+      <li class="nav-item" data-hash="market" data-view="view-market">
+        <i class="fa-solid fa-chart-line"></i> Live Market
+      </li>
+    </ul>
+
+    <div class="sidebar-spacer"></div>
+
+    <!-- User profile -->
+    <div class="user-profile">
+      <div class="user-avatar"></div>
+      <div class="user-info">
+        <span class="user-name">{{ username or 'demo_user' }}</span>
+        <span class="user-role">Investor</span>
+      </div>
+      <i class="fa-solid fa-arrow-right-from-bracket ms-auto"
+         style="font-size:0.85rem;cursor:pointer;color:#7C9896;"
+         onclick="doLogout()" title="Logout"></i>
+    </div>
+
+    <ul class="nav-links">
+      <li class="nav-item" data-hash="" data-view="view-settings">
+        <i class="fa-solid fa-gear"></i> Settings
+      </li>
+      <li class="nav-item" data-hash="" data-view="view-contact">
+        <i class="fa-solid fa-headset"></i> Contact Us
+      </li>
+    </ul>
+  </aside>
+
+  <!-- ================================================================
+       MAIN CONTENT AREA
+       ================================================================ -->
+  <main class="main-content">
+
+    <!-- TOP HEADER (persistent) -->
+    <header class="top-header">
+      <!-- Hamburger (mobile) -->
+      <button class="hamburger" id="hamburger-btn" aria-label="Open menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <h1 class="page-title" id="page-title">
+        Dashboard
+        <div class="cubes">
+          <div style="width:11px;height:11px;background:#1FB28C;position:absolute;top:0;left:9px;border-radius:2px;transform:rotate(45deg);"></div>
+          <div style="width:11px;height:11px;background:#C4F60D;position:absolute;bottom:0;left:0;border-radius:2px;transform:rotate(45deg);"></div>
+          <div style="width:11px;height:11px;background:#0A2523;position:absolute;bottom:0;right:0;border-radius:2px;transform:rotate(45deg);"></div>
+        </div>
+      </h1>
+
+      <div class="header-actions">
+        <!-- Search (Dashboard) -->
+        <div class="search-bar" id="global-search-bar">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="symbol-input"
+                 placeholder="Search symbol (e.g. TCS)" autocomplete="off" />
+        </div>
+        <button class="icon-btn" id="search-btn" aria-label="Search" title="Search">
+          <i class="fa-solid fa-search"></i>
+        </button>
+
+        <!-- Dark/Light toggle -->
+        <button class="dark-toggle" id="theme-toggle" aria-label="Toggle theme" title="Toggle dark / light mode">
+          <i class="fa-solid fa-moon" id="theme-icon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ==========================================
+         VIEW: DASHBOARD
+         ========================================== -->
+    <div id="view-dashboard" class="spa-view active">
+
+      <!-- TOP STATS ROW -->
+      <div class="top-stats-row mb-4">
+
+        <!-- Portfolio Card -->
+        <div class="portfolio-card">
+          <div>
+            <div class="portfolio-label">Portfolio value</div>
+            <div class="portfolio-val">₹18,25,489.00</div>
+            <div class="pt-bar"><div class="pt-fill"></div></div>
+            <div class="pt-stats">
+              <span class="prof">Profit: ₹34,543.00</span>
+              <span class="loss">Loss: ₹12,423.00</span>
+            </div>
+          </div>
+          <div style="position:absolute;top:22px;right:22px;width:38px;height:38px;border:2px solid rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <i class="fa-solid fa-coins" style="color:#1FB28C;"></i>
+          </div>
+        </div>
+
+        <!-- Quick-pick index cards -->
+        <div class="card-w mini-card bg-apple" onclick="quickFetch('^NSEI')" style="cursor:pointer;">
+          <div class="mini-head">
+            <div class="mini-logo"><i class="fa-solid fa-chart-pie text-secondary"></i></div>
+            NIFTY 50
+          </div>
+          <div class="mini-chart"><canvas id="spark-nifty"></canvas></div>
+          <div>
+            <div class="mini-price">Index Value</div>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="mini-val" id="val-nifty">–</div>
+              <div class="mini-pct" id="pct-nifty">–</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-w mini-card bg-meta" onclick="quickFetch('^NSEBANK')" style="cursor:pointer;">
+          <div class="mini-head">
+            <div class="mini-logo text-primary"><i class="fa-solid fa-building-columns"></i></div>
+            BANK NIFTY
+          </div>
+          <div class="mini-chart"><canvas id="spark-bank"></canvas></div>
+          <div>
+            <div class="mini-price">Index Value</div>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="mini-val" id="val-bank">–</div>
+              <div class="mini-pct" id="pct-bank">–</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-w mini-card bg-msft" onclick="quickFetch('^CNXIT')" style="cursor:pointer;">
+          <div class="mini-head">
+            <div class="mini-logo text-info"><i class="fa-solid fa-laptop-code"></i></div>
+            NIFTY IT
+          </div>
+          <div class="mini-chart"><canvas id="spark-it"></canvas></div>
+          <div>
+            <div class="mini-price">Index Value</div>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="mini-val" id="val-it">–</div>
+              <div class="mini-pct" id="pct-it">–</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-w mini-card bg-goog" onclick="quickFetch('^CNXFMCG')" style="cursor:pointer;">
+          <div class="mini-head">
+            <div class="mini-logo text-danger"><i class="fa-solid fa-basket-shopping"></i></div>
+            FMCG
+          </div>
+          <div class="mini-chart"><canvas id="spark-fmcg"></canvas></div>
+          <div>
+            <div class="mini-price">Index Value</div>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="mini-val" id="val-fmcg">–</div>
+              <div class="mini-pct" id="pct-fmcg">–</div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /top-stats-row -->
+
+      <!-- MAIN GRID -->
+      <div class="dash-grid">
+
+        <!-- LEFT COLUMN -->
+        <div class="col-left">
+
+          <!-- Live Chart card -->
+          <div class="card-w">
+            <div class="card-title-row">
+              <h5 id="live-chart-title">Market Analysis — Search a Symbol</h5>
+              <div class="perf-controls">
+                <select id="period-select" class="perf-select" onchange="fetchStockData()">
+                  <option value="1mo">1 Month</option>
+                  <option value="3mo" selected>3 Months</option>
+                  <option value="6mo">6 Months</option>
+                  <option value="1y">1 Year</option>
+                  <option value="5y">5 Years</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Stock info strip (shown after search) -->
+            <div id="stock-info-strip" style="display:none; margin-bottom:1rem;">
+              <div class="d-flex align-items-center gap-3">
+                <div id="strip-logo" class="item-logo"></div>
+                <div>
+                  <div id="strip-symbol" style="font-weight:700;font-size:1rem;"></div>
+                  <div id="strip-company" style="font-size:0.8rem;color:var(--text-muted);"></div>
+                </div>
+                <div class="ms-auto text-end">
+                  <div id="strip-price" style="font-size:1.2rem;font-weight:700;"></div>
+                  <div id="strip-change" style="font-size:0.85rem;font-weight:600;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-container-large">
+              <div id="chart-placeholder"
+                   style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-muted);gap:10px;">
+                <i class="fa-solid fa-magnifying-glass" style="font-size:2rem;opacity:0.25;"></i>
+                <span style="font-size:0.9rem;">Search a symbol (e.g. RELIANCE, TCS) to load live data</span>
+              </div>
+              <canvas id="price-chart" style="display:none;"></canvas>
+            </div>
+
+            <!-- Action ribbon -->
+            <div id="live-controls" style="display:none; margin-top:1rem; padding-top:0.85rem; border-top:1px solid var(--border);">
+              <div class="d-flex gap-3 justify-content-end">
+                <button class="btn btn-sm fw-bold px-3"
+                        style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;"
+                        onclick="addToWatchlist()" id="add-watchlist-btn">
+                  <i class="fa-regular fa-star me-1"></i> Add to Watchlist
+                </button>
+                <button class="btn btn-sm text-white fw-bold px-3"
+                        style="background:var(--accent);border-radius:8px;"
+                        onclick="runMLPrediction()" id="ml-predict-btn">
+                  <i class="fa-solid fa-wand-magic-sparkles me-1"></i> YOLO Predict
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Prediction Result Card (Vision) -->
+          <div class="card-w" id="ml-result-card" style="display:none;">
+            <div class="card-title-row mb-3">
+              <h5 style="color:var(--accent);"><i class="fa-solid fa-wand-magic-sparkles me-1"></i> AI Vision Prediction</h5>
+              <div class="badge" style="background:rgba(31,178,140,0.12);color:var(--accent);font-weight:600;padding:4px 10px;border-radius:20px;" id="ml-model-name">YOLOv8</div>
+            </div>
+            <div class="text-center p-3 rounded" style="background:var(--bg);border:1px dashed var(--border);">
+              <img id="ml-result-img" src="" style="max-width:100%;max-height:400px;display:none;border-radius:8px;" alt="ML Prediction Result" />
+              <div id="ml-result-spinner" class="py-4" style="color:var(--text-muted);">
+                <span class="spin mb-2" style="width:22px;height:22px;border-width:3px;"></span><br />
+                <small>Running YOLOv8 inference on chart…</small>
+              </div>
+            </div>
+            <div class="mt-3" style="font-size:0.83rem;color:var(--text-muted);" id="ml-result-stats"></div>
+          </div>
+
+          <!-- Portfolio Performance (Bar Chart) -->
+          <div class="card-w">
+            <div class="card-title-row mb-0">
+              <h5>Portfolio Performance</h5>
+            </div>
+            <div class="legend-dots mt-1">
+              <span class="dot-dark">2021 Aggregated Volume</span>
+              <span class="dot-lime">2022 Aggregated Volume</span>
+            </div>
+            <div class="chart-container-large mt-3" style="height:220px;">
+              <canvas id="portfolio-chart"></canvas>
+            </div>
+          </div>
+
+        </div><!-- /col-left -->
+
+        <!-- RIGHT COLUMN -->
+        <div class="col-right">
+
+          <!-- Watchlist widget (sidebar mini-version) -->
+          <div class="card-w">
+            <div class="card-title-row mb-1">
+              <h5>My Vault</h5>
+              <button class="btn-view-all" onclick="navigateTo('watchlist')">View All</button>
+            </div>
+            <div class="list-wrapper" id="watchlist-tbody" style="max-height:350px;overflow-y:auto;padding-right:4px;">
+              <div class="text-center py-4" style="color:var(--text-muted);">
+                <span class="spin"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gainers / Losers -->
+          <div class="card-w">
+            <div class="card-title-row mb-2">
+              <h5 id="g-l-title">Top Movers</h5>
+              <div class="tabs-pill">
+                <div class="tab-p active" id="tab-gainers" onclick="switchGLTab('gainers')">Gainers</div>
+                <div class="tab-p" id="tab-losers" onclick="switchGLTab('losers')">Losers</div>
+              </div>
+            </div>
+            <div style="font-size:0.73rem;color:var(--text-muted);margin-bottom:0.75rem;">Source: CSV Dataset (Jan 11, 2022)</div>
+            <div class="list-wrapper" id="gl-body">
+              <div class="text-center py-4" style="color:var(--text-muted);">
+                <span class="spin"></span> Fetching movers…
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /col-right -->
+      </div><!-- /dash-grid -->
+    </div><!-- /view-dashboard -->
+
+
+    <!-- ==========================================
+         VIEW: WATCHLIST (full page)
+         ========================================== -->
+    <div id="view-watchlist" class="spa-view">
+
+      <div class="wl-header">
+        <h2><i class="fa-solid fa-star me-2" style="color:var(--accent);"></i> My Watchlist</h2>
+      </div>
+
+      <!-- Add Symbol Row -->
+      <div class="wl-add-row">
+        <input type="text" id="wl-add-input"
+               placeholder="Add symbol (e.g. INFY, WIPRO)" autocomplete="off" />
+        <button id="wl-add-btn" onclick="addWatchlistItem()">
+          <i class="fa-solid fa-plus me-1"></i> Add
+        </button>
+      </div>
+
+      <!-- Inline error -->
+      <div class="wl-error" id="wl-error">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        Symbol not found on NSE — check the ticker and try again
+      </div>
+
+      <!-- Cards grid -->
+      <div class="wl-grid" id="wl-cards">
+        <!-- Skeleton cards while loading -->
+        <div class="skeleton-card" id="wl-skel-1">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton skeleton-line w80"></div>
+            <div class="skeleton skeleton-line w50"></div>
+            <div class="skeleton skeleton-line w65"></div>
+          </div>
+        </div>
+        <div class="skeleton-card" id="wl-skel-2">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton skeleton-line w80"></div>
+            <div class="skeleton skeleton-line w50"></div>
+            <div class="skeleton skeleton-line w65"></div>
+          </div>
+        </div>
+        <div class="skeleton-card" id="wl-skel-3">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton skeleton-line w80"></div>
+            <div class="skeleton skeleton-line w50"></div>
+            <div class="skeleton skeleton-line w65"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="wl-empty" style="display:none; text-align:center; padding:3rem; color:var(--text-muted);">
+        <i class="fa-regular fa-star" style="font-size:2.5rem; opacity:0.3; display:block; margin-bottom:1rem;"></i>
+        Your watchlist is empty — add a symbol above.
+      </div>
+
+    </div><!-- /view-watchlist -->
+
+
+    <!-- ==========================================
+         VIEW: ML PREDICTIONS
+         ========================================== -->
+    <div id="view-ml" class="spa-view">
+
+      <div class="ml-header">
+        <h2><i class="fa-solid fa-robot me-2" style="color:var(--accent);"></i> ML Predictions</h2>
+        <p>Enter an NSE symbol to get AI-powered forecasts. DEV_MODE uses sample data.</p>
+      </div>
+
+      <div class="ml-panels">
+
+        <!-- VOLATILITY PANEL -->
+        <div class="ml-panel">
+          <div class="ml-panel-title">
+            <i class="fa-solid fa-wave-square"></i> Volatility Predictor
+          </div>
+
+          <input type="text" class="ml-input" id="vol-symbol"
+                 placeholder="Symbol (e.g. RELIANCE)" autocomplete="off" />
+
+          <!-- Horizon slider -->
+          <div class="ml-slider-row">
+            <div class="ml-slider-label">
+              <span>Forecast Horizon (days)</span>
+              <strong id="vol-horizon-val">10</strong>
+            </div>
+            <input type="range" class="ml-slider" id="vol-horizon"
+                   min="2" max="60" value="10"
+                   oninput="document.getElementById('vol-horizon-val').textContent = this.value" />
+            <div class="ml-slider-label" style="color:var(--text-muted);">
+              <span>2 days</span><span>60 days</span>
+            </div>
+          </div>
+
+          <button class="ml-btn" id="vol-btn" onclick="runVolatilityPredict()">
+            <i class="fa-solid fa-bolt me-1"></i> Predict Volatility
+          </button>
+
+          <!-- Error -->
+          <div class="ml-error" id="vol-error">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="vol-error-msg">Not enough historical data for this symbol.</span>
+          </div>
+
+          <!-- Result -->
+          <div class="ml-result" id="vol-result" style="display:none;">
+            <div class="d-flex justify-content-center align-items-center py-2" id="vol-spinner" style="display:none !important;">
+              <div class="spinner"></div>
+            </div>
+            <div id="vol-result-inner">
+              <div class="ml-result-row">
+                <span class="ml-result-key">Symbol</span>
+                <span class="ml-result-val" id="vol-r-symbol">–</span>
+              </div>
+              <div class="ml-result-row">
+                <span class="ml-result-key">Horizon</span>
+                <span class="ml-result-val" id="vol-r-horizon">–</span>
+              </div>
+              <div class="ml-result-row">
+                <span class="ml-result-key">Predicted Volatility</span>
+                <span class="ml-result-val" id="vol-r-vol">–</span>
+              </div>
+              <div class="ml-result-row">
+                <span class="ml-result-key">CV Score (MAE)</span>
+                <span class="ml-result-val" id="vol-r-cv">–</span>
+              </div>
+              <div class="ml-result-row">
+                <span class="ml-result-key">Risk Level</span>
+                <span id="vol-r-risk">–</span>
+              </div>
+            </div>
+          </div>
+        </div><!-- /volatility panel -->
+
+        <!-- PRICE PREDICTION PANEL -->
+        <div class="ml-panel">
+          <div class="ml-panel-title">
+            <i class="fa-solid fa-indian-rupee-sign"></i> Price Predictor
+          </div>
+
+          <input type="text" class="ml-input" id="price-symbol"
+                 placeholder="Symbol (e.g. TCS)" autocomplete="off" />
+
+          <button class="ml-btn" id="price-btn" onclick="runPricePredict()">
+            <i class="fa-solid fa-brain me-1"></i> Predict Price
+          </button>
+
+          <!-- Error -->
+          <div class="ml-error" id="price-error">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="price-error-msg">Not enough historical data for this symbol.</span>
+          </div>
+
+          <!-- Result -->
+          <div class="ml-result" id="price-result" style="display:none;">
+            <div class="d-flex justify-content-center align-items-center py-2" id="price-spinner" style="display:none !important;">
+              <div class="spinner"></div>
+            </div>
+            <div id="price-result-inner">
+              <div class="ml-result-row">
+                <span class="ml-result-key">Symbol</span>
+                <span class="ml-result-val" id="price-r-symbol">–</span>
+              </div>
+              <div class="ml-result-row">
+                <span class="ml-result-key">Predicted Price</span>
+                <span class="ml-result-val" id="price-r-price">–</span>
+              </div>
+              <div class="ml-result-row">
+                <span class="ml-result-key">Confidence Range</span>
+                <span class="ml-result-val" id="price-r-ci">–</span>
+              </div>
+              <div class="ml-result-row">
+                <span class="ml-result-key">Horizon</span>
+                <span class="ml-result-val" id="price-r-horizon">–</span>
+              </div>
+              <div class="ml-result-row">
+                <span class="ml-result-key">Model</span>
+                <span class="ml-result-val" id="price-r-model">–</span>
+              </div>
+            </div>
+          </div>
+        </div><!-- /price panel -->
+
+      </div><!-- /ml-panels -->
+    </div><!-- /view-ml -->
+
+
+    <!-- ==========================================
+         VIEW: LIVE MARKET
+         ========================================== -->
+    <div id="view-market" class="spa-view">
+
+      <div class="market-header">
+        <h2><i class="fa-solid fa-chart-line me-2" style="color:var(--accent);"></i> Live Market</h2>
+        <button class="market-refresh" id="market-refresh-btn" onclick="loadMarketView()">
+          <i class="fa-solid fa-rotate-right"></i> Refresh
+        </button>
+      </div>
+
+      <div class="market-grid" id="market-grid">
+        <!-- Skeleton cards -->
+        <div class="skeleton-ticker" id="mkt-skel-1">
+          <div class="skeleton skeleton-circle"></div>
+          <div class="skeleton skeleton-line w80"></div>
+          <div class="skeleton skeleton-line w50"></div>
+          <div class="skeleton skeleton-line w65"></div>
+        </div>
+        <div class="skeleton-ticker" id="mkt-skel-2">
+          <div class="skeleton skeleton-circle"></div>
+          <div class="skeleton skeleton-line w80"></div>
+          <div class="skeleton skeleton-line w50"></div>
+          <div class="skeleton skeleton-line w65"></div>
+        </div>
+        <div class="skeleton-ticker" id="mkt-skel-3">
+          <div class="skeleton skeleton-circle"></div>
+          <div class="skeleton skeleton-line w80"></div>
+          <div class="skeleton skeleton-line w50"></div>
+          <div class="skeleton skeleton-line w65"></div>
+        </div>
+        <div class="skeleton-ticker" id="mkt-skel-4">
+          <div class="skeleton skeleton-circle"></div>
+          <div class="skeleton skeleton-line w80"></div>
+          <div class="skeleton skeleton-line w50"></div>
+          <div class="skeleton skeleton-line w65"></div>
+        </div>
+        <div class="skeleton-ticker" id="mkt-skel-5">
+          <div class="skeleton skeleton-circle"></div>
+          <div class="skeleton skeleton-line w80"></div>
+          <div class="skeleton skeleton-line w50"></div>
+          <div class="skeleton skeleton-line w65"></div>
+        </div>
+        <div class="skeleton-ticker" id="mkt-skel-6">
+          <div class="skeleton skeleton-circle"></div>
+          <div class="skeleton skeleton-line w80"></div>
+          <div class="skeleton skeleton-line w50"></div>
+          <div class="skeleton skeleton-line w65"></div>
+        </div>
+      </div>
+
+    </div><!-- /view-market -->
+
+
+    <!-- ==========================================
+         VIEW: SETTINGS
+         ========================================== -->
+        <div id="view-settings" class="spa-view">
+      <div class="st-wrap">
+
+        <!-- SETTINGS SIDEBAR -->
+        <aside class="st-side">
+
+          <div class="st-user-card">
+            <div class="st-user-avatar"><i class="fa-solid fa-circle-user"></i></div>
+            <div class="st-user-meta">
+              <div class="st-user-name" id="st-username-label">{{ username or 'demo_user' }}</div>
+              <div class="st-user-tag">BullLens Member</div>
+            </div>
+          </div>
+
+          <div class="st-divider"></div>
+
+          <nav class="st-nav">
+            <button class="st-item active" onclick="stSwitch('stp-profile',this)">
+              <span class="st-icon" style="background:rgba(31,178,140,.14);color:#1fb28c;"><i class="fa-solid fa-circle-user"></i></span>
+              <span class="st-text"><span class="st-title">Profile</span><span class="st-sub">Name, email, account info</span></span>
+              <i class="fa-solid fa-chevron-right st-arrow"></i>
+            </button>
+            <button class="st-item" onclick="stSwitch('stp-predictions',this)">
+              <span class="st-icon" style="background:rgba(99,102,241,.14);color:#818cf8;"><i class="fa-solid fa-brain"></i></span>
+              <span class="st-text"><span class="st-title">Prediction Preferences</span><span class="st-sub">Prediction type, confidence level, risk level</span></span>
+              <i class="fa-solid fa-chevron-right st-arrow"></i>
+            </button>
+            <button class="st-item" onclick="stSwitch('stp-market',this)">
+              <span class="st-icon" style="background:rgba(59,130,246,.14);color:#60a5fa;"><i class="fa-solid fa-globe"></i></span>
+              <span class="st-text"><span class="st-title">Market Selection</span><span class="st-sub">NSE, Crypto, US stocks</span></span>
+              <i class="fa-solid fa-chevron-right st-arrow"></i>
+            </button>
+            <button class="st-item" onclick="stSwitch('stp-notifications',this)">
+              <span class="st-icon" style="background:rgba(245,158,11,.14);color:#fbbf24;"><i class="fa-solid fa-bell"></i></span>
+              <span class="st-text"><span class="st-title">Notifications</span><span class="st-sub">Buy/sell alerts, prediction alerts</span></span>
+              <i class="fa-solid fa-chevron-right st-arrow"></i>
+            </button>
+            <button class="st-item" onclick="stSwitch('stp-appearance',this)">
+              <span class="st-icon" style="background:rgba(168,85,247,.14);color:#c084fc;"><i class="fa-solid fa-palette"></i></span>
+              <span class="st-text"><span class="st-title">Appearance</span><span class="st-sub">Theme, display, chart style</span></span>
+              <i class="fa-solid fa-chevron-right st-arrow"></i>
+            </button>
+            <button class="st-item" onclick="stSwitch('stp-watchlist',this)">
+              <span class="st-icon" style="background:rgba(234,179,8,.14);color:#facc15;"><i class="fa-solid fa-star"></i></span>
+              <span class="st-text"><span class="st-title">Watchlist Settings</span><span class="st-sub">Favorite stocks, tracking</span></span>
+              <i class="fa-solid fa-chevron-right st-arrow"></i>
+            </button>
+            <button class="st-item" onclick="stSwitch('stp-security',this)">
+              <span class="st-icon" style="background:rgba(16,185,129,.14);color:#34d399;"><i class="fa-solid fa-shield-halved"></i></span>
+              <span class="st-text"><span class="st-title">Privacy &amp; Security</span><span class="st-sub">Password, login protection</span></span>
+              <i class="fa-solid fa-chevron-right st-arrow"></i>
+            </button>
+            <button class="st-item" onclick="stSwitch('stp-help',this)">
+              <span class="st-icon" style="background:rgba(14,165,233,.14);color:#38bdf8;"><i class="fa-solid fa-circle-question"></i></span>
+              <span class="st-text"><span class="st-title">Help &amp; Feedback</span><span class="st-sub">Help center, report issue</span></span>
+              <i class="fa-solid fa-chevron-right st-arrow"></i>
+            </button>
+          </nav>
+
+          <div class="st-divider"></div>
+          <button class="st-logout" onclick="doLogout()"><i class="fa-solid fa-right-from-bracket"></i> Log out</button>
+        </aside>
+
+        <!-- CONTENT PANELS -->
+        <div class="st-content">
+          <div class="st-toast" id="st-toast"></div>
+
+          <!-- 1. PROFILE -->
+          <section class="st-panel active" id="stp-profile">
+            <div class="st-ph">
+              <span class="st-ph-icon" style="background:rgba(31,178,140,.14);color:#1fb28c;"><i class="fa-solid fa-circle-user"></i></span>
+              <div><h2 class="st-ph-title">Profile</h2><p class="st-ph-desc">Manage your personal information and account details</p></div>
+            </div>
+            <div class="st-grid">
+              <div class="st-field"><label>Full Name</label><input type="text" id="sp-name" placeholder="Enter your full name"></div>
+              <div class="st-field"><label>Email Address</label><input type="email" id="sp-email" placeholder="Email"></div>
+              <div class="st-field"><label>Username</label><input type="text" id="sp-username" placeholder="@username"></div>
+              <div class="st-field"><label>Phone</label><input type="text" id="sp-phone" placeholder="+91 00000 00000"></div>
+              <div class="st-field st-full"><label>Bio <span class="st-opt">optional</span></label><textarea id="sp-bio" rows="3" placeholder="Tell us about yourself…"></textarea></div>
+            </div>
+            <div class="st-foot"><button class="st-save" onclick="saveSettings('profile')"><i class="fa-solid fa-floppy-disk"></i> Save Profile</button></div>
+          </section>
+
+          <!-- 2. PREDICTION PREFERENCES -->
+          <section class="st-panel" id="stp-predictions">
+            <div class="st-ph">
+              <span class="st-ph-icon" style="background:rgba(99,102,241,.14);color:#818cf8;"><i class="fa-solid fa-brain"></i></span>
+              <div><h2 class="st-ph-title">Prediction Preferences</h2><p class="st-ph-desc">Customise how BullLens generates forecasts for you</p></div>
+            </div>
+            <div class="st-grid">
+              <div class="st-field"><label>Prediction Type</label><select id="pp-type"><option value="intraday">Intraday</option><option value="short-term" selected>Short-term (1–7 days)</option><option value="long-term">Long-term (1–3 months)</option></select></div>
+              <div class="st-field"><label>Risk Level</label><select id="pp-risk"><option value="low">Low — Conservative</option><option value="medium" selected>Medium — Balanced</option><option value="high">High — Aggressive</option></select></div>
+              <div class="st-field st-full">
+                <label>Confidence Threshold &nbsp;<span class="st-badge" id="pp-conf-val">70%</span></label>
+                <small class="st-hint">Only show predictions above this confidence level</small>
+                <input type="range" id="pp-conf" min="10" max="100" step="5" value="70" oninput="document.getElementById('pp-conf-val').textContent=this.value+'%'">
+                <div class="st-range-row"><span>10%</span><span>100%</span></div>
+              </div>
+            </div>
+            <div class="st-foot"><button class="st-save" onclick="saveSettings('predictions')"><i class="fa-solid fa-floppy-disk"></i> Save Preferences</button></div>
+          </section>
+
+          <!-- 3. MARKET SELECTION -->
+          <section class="st-panel" id="stp-market">
+            <div class="st-ph">
+              <span class="st-ph-icon" style="background:rgba(59,130,246,.14);color:#60a5fa;"><i class="fa-solid fa-globe"></i></span>
+              <div><h2 class="st-ph-title">Market Selection</h2><p class="st-ph-desc">Choose which markets appear in your dashboard</p></div>
+            </div>
+            <div class="st-grid">
+              <div class="st-field"><label>Primary Market</label><select id="mk-primary"><option value="NSE" selected>NSE — Indian Stocks</option><option value="Crypto">Crypto</option><option value="US">US Stocks</option></select></div>
+            </div>
+            <p class="st-group-label">Enable / Disable Markets</p>
+            <div class="st-toggle-list">
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(31,178,140,.14);color:#1fb28c;"><i class="fa-solid fa-indian-rupee-sign"></i></div><div><strong>NSE</strong><span>Indian National Stock Exchange</span></div></div><div class="st-toggle active" id="mk-nse" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(245,158,11,.14);color:#f59e0b;"><i class="fa-brands fa-bitcoin"></i></div><div><strong>Crypto</strong><span>BTC, ETH and others</span></div></div><div class="st-toggle active" id="mk-crypto" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(59,130,246,.14);color:#3b82f6;"><i class="fa-solid fa-flag-usa"></i></div><div><strong>US Stocks</strong><span>NYSE, NASDAQ equities</span></div></div><div class="st-toggle" id="mk-us" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+            </div>
+            <div class="st-foot"><button class="st-save" onclick="saveSettings('market')"><i class="fa-solid fa-floppy-disk"></i> Save Markets</button></div>
+          </section>
+
+          <!-- 4. NOTIFICATIONS -->
+          <section class="st-panel" id="stp-notifications">
+            <div class="st-ph">
+              <span class="st-ph-icon" style="background:rgba(245,158,11,.14);color:#fbbf24;"><i class="fa-solid fa-bell"></i></span>
+              <div><h2 class="st-ph-title">Notifications</h2><p class="st-ph-desc">Control which alerts you receive and how</p></div>
+            </div>
+            <div class="st-grid">
+              <div class="st-field"><label>Notification Channel</label><select id="nt-channel"><option value="email">Email</option><option value="push" selected>Push Notification</option><option value="sms">SMS</option><option value="all">All Channels</option></select></div>
+            </div>
+            <p class="st-group-label">Alert Types</p>
+            <div class="st-toggle-list">
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(16,185,129,.14);color:#10b981;"><i class="fa-solid fa-arrow-trend-up"></i></div><div><strong>Buy Alerts</strong><span>Notify me of buy signals</span></div></div><div class="st-toggle active" id="nt-buy" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(248,81,73,.14);color:#f85149;"><i class="fa-solid fa-arrow-trend-down"></i></div><div><strong>Sell Alerts</strong><span>Notify me of sell signals</span></div></div><div class="st-toggle active" id="nt-sell" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(139,92,246,.14);color:#8b5cf6;"><i class="fa-solid fa-wand-magic-sparkles"></i></div><div><strong>Prediction Alerts</strong><span>New ML prediction alerts</span></div></div><div class="st-toggle active" id="nt-pred" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(31,178,140,.14);color:#1fb28c;"><i class="fa-solid fa-newspaper"></i></div><div><strong>Market News</strong><span>Breaking news for your stocks</span></div></div><div class="st-toggle" id="nt-news" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+            </div>
+            <div class="st-foot"><button class="st-save" onclick="saveSettings('notifications')"><i class="fa-solid fa-floppy-disk"></i> Save Notifications</button></div>
+          </section>
+
+          <!-- 5. APPEARANCE -->
+          <section class="st-panel" id="stp-appearance">
+            <div class="st-ph">
+              <span class="st-ph-icon" style="background:rgba(168,85,247,.14);color:#c084fc;"><i class="fa-solid fa-palette"></i></span>
+              <div><h2 class="st-ph-title">Appearance</h2><p class="st-ph-desc">Personalise the look and feel of BullLens</p></div>
+            </div>
+            <p class="st-group-label">Theme</p>
+            <div class="st-theme-row">
+              <div class="st-theme-card active" id="th-light" onclick="pickTheme('light')"><div class="st-theme-preview" style="background:linear-gradient(135deg,#f6f8f9 55%,#fff 45%);"></div><span>Light</span></div>
+              <div class="st-theme-card" id="th-dark" onclick="pickTheme('dark')"><div class="st-theme-preview" style="background:linear-gradient(135deg,#0f1923 55%,#1a2535 45%);"></div><span>Dark</span></div>
+              <div class="st-theme-card" id="th-auto" onclick="pickTheme('auto')"><div class="st-theme-preview" style="background:linear-gradient(135deg,#f6f8f9 50%,#0f1923 50%);"></div><span>Auto</span></div>
+            </div>
+            <div class="st-grid" style="margin-top:1.25rem;">
+              <div class="st-field"><label>Chart Style</label><select id="ap-chart"><option value="candlestick" selected>Candlestick</option><option value="line">Line</option><option value="area">Area</option><option value="bars">OHLC Bars</option></select></div>
+            </div>
+            <p class="st-group-label">Display Options</p>
+            <div class="st-toggle-list">
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(99,102,241,.14);color:#6366f1;"><i class="fa-solid fa-border-all"></i></div><div><strong>Show Grid Lines</strong><span>Display grid on charts</span></div></div><div class="st-toggle active" id="ap-grid" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(31,178,140,.14);color:#1fb28c;"><i class="fa-solid fa-tags"></i></div><div><strong>Show Legend</strong><span>Display chart legend</span></div></div><div class="st-toggle active" id="ap-legend" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+            </div>
+            <div class="st-foot"><button class="st-save" onclick="saveSettings('appearance')"><i class="fa-solid fa-floppy-disk"></i> Save Appearance</button></div>
+          </section>
+
+          <!-- 6. WATCHLIST -->
+          <section class="st-panel" id="stp-watchlist">
+            <div class="st-ph">
+              <span class="st-ph-icon" style="background:rgba(234,179,8,.14);color:#facc15;"><i class="fa-solid fa-star"></i></span>
+              <div><h2 class="st-ph-title">Watchlist Settings</h2><p class="st-ph-desc">Manage your favourite stocks and tracking preferences</p></div>
+            </div>
+            <div class="st-grid">
+              <div class="st-field st-full"><label>Favourite Stocks <span class="st-opt">comma-separated</span></label><textarea id="ws-favs" rows="3" placeholder="e.g. TCS, INFY, RELIANCE, WIPRO"></textarea></div>
+              <div class="st-field"><label>Default Sort</label><select id="ws-sort"><option value="alpha" selected>Alphabetical</option><option value="change">% Change</option><option value="price">Price</option></select></div>
+              <div class="st-field"><label>Auto-Refresh</label><select id="ws-refresh"><option value="30">Every 30 sec</option><option value="60" selected>Every 1 min</option><option value="300">Every 5 min</option><option value="0">Manual only</option></select></div>
+            </div>
+            <p class="st-group-label">Tracking Options</p>
+            <div class="st-toggle-list">
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(16,185,129,.14);color:#10b981;"><i class="fa-solid fa-dollar-sign"></i></div><div><strong>Track Price Changes</strong><span>Monitor real-time movements</span></div></div><div class="st-toggle active" id="ws-price" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(59,130,246,.14);color:#3b82f6;"><i class="fa-solid fa-wave-square"></i></div><div><strong>Track Volume</strong><span>Monitor trading volume spikes</span></div></div><div class="st-toggle active" id="ws-vol" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+            </div>
+            <div class="st-foot"><button class="st-save" onclick="saveSettings('watchlist')"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button></div>
+          </section>
+
+          <!-- 7. PRIVACY & SECURITY -->
+          <section class="st-panel" id="stp-security">
+            <div class="st-ph">
+              <span class="st-ph-icon" style="background:rgba(16,185,129,.14);color:#34d399;"><i class="fa-solid fa-shield-halved"></i></span>
+              <div><h2 class="st-ph-title">Privacy &amp; Security</h2><p class="st-ph-desc">Keep your account safe with a strong password</p></div>
+            </div>
+            <div class="st-grid">
+              <div class="st-field st-full"><label>Current Password</label><input type="password" id="sec-cur" placeholder="Enter current password"></div>
+              <div class="st-field"><label>New Password</label><input type="password" id="sec-new" placeholder="New password"></div>
+              <div class="st-field"><label>Confirm Password</label><input type="password" id="sec-confirm" placeholder="Confirm password"></div>
+            </div>
+            <p class="st-group-label">Login Protection</p>
+            <div class="st-toggle-list">
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(139,92,246,.14);color:#8b5cf6;"><i class="fa-solid fa-mobile-screen"></i></div><div><strong>Two-Factor Authentication</strong><span>Require OTP on every login</span></div></div><div class="st-toggle" id="sec-2fa" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+              <div class="st-trow"><div class="st-tinfo"><div class="st-ticon" style="background:rgba(31,178,140,.14);color:#1fb28c;"><i class="fa-solid fa-clock-rotate-left"></i></div><div><strong>Session Timeout</strong><span>Auto-logout after 30 min inactive</span></div></div><div class="st-toggle active" id="sec-timeout" onclick="this.classList.toggle('active')"><div class="st-knob"></div></div></div>
+            </div>
+            <div class="st-foot"><button class="st-save" onclick="saveSettings('security')"><i class="fa-solid fa-floppy-disk"></i> Update Password</button></div>
+          </section>
+
+          <!-- 8. HELP & FEEDBACK -->
+          <section class="st-panel" id="stp-help">
+            <div class="st-ph">
+              <span class="st-ph-icon" style="background:rgba(14,165,233,.14);color:#38bdf8;"><i class="fa-solid fa-circle-question"></i></span>
+              <div><h2 class="st-ph-title">Help &amp; Feedback</h2><p class="st-ph-desc">Browse the help centre or report an issue</p></div>
+            </div>
+            <div class="st-help-links">
+              <a class="st-help-row" href="#" onclick="return false;"><div class="st-ticon" style="background:rgba(14,165,233,.14);color:#38bdf8;"><i class="fa-solid fa-book"></i></div><div><strong>Documentation</strong><span>Guides, tutorials and FAQs</span></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:.75rem;margin-left:auto;"></i></a>
+              <a class="st-help-row" href="#" onclick="return false;"><div class="st-ticon" style="background:rgba(248,81,73,.14);color:#f85149;"><i class="fa-solid fa-bug"></i></div><div><strong>Report a Bug</strong><span>Tell us what went wrong</span></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:.75rem;margin-left:auto;"></i></a>
+              <a class="st-help-row" href="#" onclick="return false;"><div class="st-ticon" style="background:rgba(234,179,8,.14);color:#facc15;"><i class="fa-solid fa-lightbulb"></i></div><div><strong>Feature Request</strong><span>Suggest something new</span></div><i class="fa-solid fa-chevron-right" style="color:var(--text-muted);font-size:.75rem;margin-left:auto;"></i></a>
+            </div>
+            <p class="st-group-label" style="margin-top:1.5rem;">Send Feedback</p>
+            <div class="st-grid">
+              <div class="st-field"><label>Issue Type</label><select id="hf-type"><option value="bug">Bug Report</option><option value="feature">Feature Suggestion</option><option value="feedback" selected>General Feedback</option><option value="other">Other</option></select></div>
+              <div class="st-field"><label>Subject</label><input type="text" id="hf-subject" placeholder="Brief summary"></div>
+              <div class="st-field st-full"><label>Message</label><textarea id="hf-message" rows="4" placeholder="Describe in detail…"></textarea></div>
+            </div>
+            <div class="st-foot"><button class="st-save" onclick="saveSettings('feedback')"><i class="fa-solid fa-paper-plane"></i> Submit Feedback</button></div>
+          </section>
+
+        </div><!-- /st-content -->
+      </div><!-- /st-wrap -->
+    </div><!-- /view-settings -->
+
+    <!-- ==========================================
+         VIEW: CONTACT US
+         ========================================== -->
+    <div id="view-contact" class="spa-view">
+      <div class="wl-header my-4 mx-3">
+        <h2><i class="fa-solid fa-headset me-2" style="color:var(--accent);"></i> Contact Us</h2>
+        <p style="color:var(--text-muted);">Please fill out the form below to get in touch with us.</p>
+      </div>
+      
+      <div class="card-w mx-3" style="max-width: 600px;">
+        <form onsubmit="event.preventDefault(); alert('Message sent successfully!');">
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:600;font-size:0.85rem;color:var(--text-muted);">Full Name</label>
+            <input type="text" class="form-control" placeholder="Enter your Name" required style="background:var(--bg-alt);border:1px solid var(--border);color:var(--text);" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label" style="font-weight:600;font-size:0.85rem;color:var(--text-muted);">Email Address</label>
+            <input type="email" class="form-control" placeholder="Enter a valid email address" required style="background:var(--bg-alt);border:1px solid var(--border);color:var(--text);" />
+          </div>
+          <div class="mb-4">
+            <label class="form-label" style="font-weight:600;font-size:0.85rem;color:var(--text-muted);">Your Message</label>
+            <textarea class="form-control" rows="4" placeholder="Enter your message..." required style="background:var(--bg-alt);border:1px solid var(--border);color:var(--text);"></textarea>
+          </div>
+          <button type="submit" class="btn text-white w-100 fw-bold" style="background:var(--accent);border-radius:8px;padding:0.75rem;">
+            Submit Message
+          </button>
+        </form>
+      </div>
+    </div><!-- /view-contact -->
+
+  </main>
+</div><!-- /dashboard-layout -->
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script src="/static/js/app.js?v={{ asset_version or '1' }}"></script>
+
+</body>
+</html>

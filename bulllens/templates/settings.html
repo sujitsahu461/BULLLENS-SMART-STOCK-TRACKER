@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - BullLens</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #f1f5f9;
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        /* Message */
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: none;
+            font-size: 14px;
+            animation: slideDown 0.3s ease;
+        }
+
+        .message.show {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .message.success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+
+        .message.error {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Settings Card */
+        .settings-card {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 40px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid rgba(71, 85, 105, 0.2);
+        }
+
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .section-title {
+            color: #f1f5f9;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title i {
+            color: #60a5fa;
+            font-size: 20px;
+        }
+
+        /* Form Groups */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            color: #f1f5f9;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .form-group .description {
+            color: #64748b;
+            font-size: 12px;
+            margin-bottom: 8px;
+            margin-top: -4px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select,
+        textarea {
+            padding: 10px 12px;
+            background: rgba(51, 65, 85, 0.5);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(51, 65, 85, 0.8);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 18px;
+            padding-right: 36px;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        /* Toggle */
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+        }
+
+        .toggle-item:not(:last-child) {
+            border-bottom: 1px solid rgba(71, 85, 105, 0.1);
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            background: rgba(71, 85, 105, 0.5);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            flex-shrink: 0;
+        }
+
+        .toggle.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .toggle-circle {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle.active .toggle-circle {
+            left: 24px;
+        }
+
+        .toggle-label {
+            flex: 1;
+        }
+
+        .toggle-label-main {
+            color: #f1f5f9;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .toggle-label-desc {
+            color: #64748b;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* Slider */
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(51, 65, 85, 0.5);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        .slider-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .slider-wrapper input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-value {
+            color: #60a5fa;
+            font-weight: 600;
+            font-size: 14px;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 40px;
+            padding-top: 32px;
+            border-top: 1px solid rgba(71, 85, 105, 0.2);
+        }
+
+        button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(71, 85, 105, 0.3);
+            color: #cbd5e1;
+            border: 1px solid rgba(71, 85, 105, 0.5);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(71, 85, 105, 0.5);
+            color: #f1f5f9;
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.4);
+            color: #fecaca;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .settings-card {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column-reverse;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-cog"></i> Settings</h1>
+            <p>Manage all your trading preferences, account, and notifications</p>
+        </div>
+
+        <div class="message" id="message"></div>
+
+        <div class="settings-card">
+            <form id="settingsForm">
+                <!-- PROFILE SECTION -->
+                <div class="section">
+                    <h2 class="section-title">
+                        <i class="fas fa-user"></i> Profile
+                    </h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fullName">Full Name</label>
+                            <input type="text" id="fullName" name="fullName" placeholder="Enter your full name">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" placeholder="Enter your email">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="bio">Bio</label>
+                        <textarea id="bio" name="bio" rows="3" placeholder="Tell us about yourself"></textarea>
+                    </div>
+                </div>
+
+                <!-- PREDICTION PREFERENCES SECTION -->
+                <div class="section">
+                    <h2 class="section-title">
+                        <i class="fas fa-chart-line"></i> Prediction Preferences
+                    </h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="predType">Prediction Type</label>
+                            <div class="description">Choose your trading strategy</div>
+                            <select id="predType" name="predType">
+                                <option value="intraday">Intraday</option>
+                                <option value="short-term">Short-term</option>
+                                <option value="long-term">Long-term</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="riskLevel">Risk Level</label>
+                            <div class="description">Your risk tolerance</div>
+                            <select id="riskLevel" name="riskLevel">
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confidence">Confidence Threshold</label>
+                        <div class="description">Minimum confidence for predictions (0-100%)</div>
+                        <div class="slider-wrapper">
+                            <input type="range" id="confidence" name="confidence" min="0" max="100" value="70">
+                            <span class="slider-value"><span id="confidenceValue">70</span>%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MARKET SECTION -->
+                <div class="section">
+                    <h2 class="section-title">
+                        <i class="fas fa-globe"></i> Market Selection
+                    </h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="primaryMarket">Primary Market</label>
+                            <div class="description">Choose your main trading market</div>
+                            <select id="primaryMarket" name="primaryMarket">
+                                <option value="NSE">NSE (Indian Stocks)</option>
+                                <option value="Crypto">Crypto</option>
+                                <option value="US">US Stocks</option>
+                            </select>
+                        </div>
+                    </div>
+                    <label>Secondary Markets (Enable/Disable)</label>
+                    <div class="toggle-item">
+                        <div class="toggle" id="nseToggle" onclick="toggleMarket('nseToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">NSE</div>
+                            <div class="toggle-label-desc">Indian National Stock Exchange</div>
+                        </div>
+                    </div>
+                    <div class="toggle-item">
+                        <div class="toggle active" id="cryptoToggle" onclick="toggleMarket('cryptoToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">Crypto</div>
+                            <div class="toggle-label-desc">Cryptocurrency trading</div>
+                        </div>
+                    </div>
+                    <div class="toggle-item">
+                        <div class="toggle" id="usToggle" onclick="toggleMarket('usToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">US Stocks</div>
+                            <div class="toggle-label-desc">United States equity market</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NOTIFICATIONS SECTION -->
+                <div class="section">
+                    <h2 class="section-title">
+                        <i class="fas fa-bell"></i> Notifications
+                    </h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="alertChannel">Notification Channel</label>
+                            <div class="description">How to receive alerts</div>
+                            <select id="alertChannel" name="alertChannel">
+                                <option value="email">Email</option>
+                                <option value="sms">SMS</option>
+                                <option value="push">Push Notification</option>
+                                <option value="all">All Channels</option>
+                            </select>
+                        </div>
+                    </div>
+                    <label>Alert Types</label>
+                    <div class="toggle-item">
+                        <div class="toggle active" id="buyAlertToggle" onclick="toggleNotif('buyAlertToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">Buy Alerts</div>
+                            <div class="toggle-label-desc">Receive notifications for buy signals</div>
+                        </div>
+                    </div>
+                    <div class="toggle-item">
+                        <div class="toggle active" id="sellAlertToggle" onclick="toggleNotif('sellAlertToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">Sell Alerts</div>
+                            <div class="toggle-label-desc">Receive notifications for sell signals</div>
+                        </div>
+                    </div>
+                    <div class="toggle-item">
+                        <div class="toggle active" id="predAlertToggle" onclick="toggleNotif('predAlertToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">Prediction Alerts</div>
+                            <div class="toggle-label-desc">Get notified about new predictions</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- APPEARANCE SECTION -->
+                <div class="section">
+                    <h2 class="section-title">
+                        <i class="fas fa-palette"></i> Appearance
+                    </h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="theme">Theme</label>
+                            <select id="theme" name="theme">
+                                <option value="dark">Dark</option>
+                                <option value="light">Light</option>
+                                <option value="auto">Auto</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="chartStyle">Chart Style</label>
+                            <select id="chartStyle" name="chartStyle">
+                                <option value="candlestick">Candlestick</option>
+                                <option value="line">Line</option>
+                                <option value="area">Area</option>
+                                <option value="bars">Bars</option>
+                            </select>
+                        </div>
+                    </div>
+                    <label>Display Options</label>
+                    <div class="toggle-item">
+                        <div class="toggle active" id="gridToggle" onclick="toggleDisplay('gridToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">Show Grid</div>
+                        </div>
+                    </div>
+                    <div class="toggle-item">
+                        <div class="toggle active" id="legendToggle" onclick="toggleDisplay('legendToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">Show Legend</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- WATCHLIST SECTION -->
+                <div class="section">
+                    <h2 class="section-title">
+                        <i class="fas fa-star"></i> Watchlist Settings
+                    </h2>
+                    <div class="form-group">
+                        <label for="favoriteStocks">Favorite Stocks (comma-separated)</label>
+                        <textarea id="favoriteStocks" name="favoriteStocks" rows="3" placeholder="e.g., TCS, INFY, WIPRO"></textarea>
+                    </div>
+                    <label style="display: block; margin-top: 20px;">Tracking Options</label>
+                    <div class="toggle-item">
+                        <div class="toggle active" id="trackPriceToggle" onclick="toggleTrack('trackPriceToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">Track Price Changes</div>
+                            <div class="toggle-label-desc">Monitor price movements</div>
+                        </div>
+                    </div>
+                    <div class="toggle-item">
+                        <div class="toggle active" id="trackVolToggle" onclick="toggleTrack('trackVolToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">Track Volume</div>
+                            <div class="toggle-label-desc">Monitor trading volume</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECURITY SECTION -->
+                <div class="section">
+                    <h2 class="section-title">
+                        <i class="fas fa-lock"></i> Privacy & Security
+                    </h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" name="currentPassword" placeholder="Enter current password">
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <input type="password" id="newPassword" name="newPassword" placeholder="Enter new password">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm new password">
+                        </div>
+                    </div>
+                    <label>Security Options</label>
+                    <div class="toggle-item">
+                        <div class="toggle" id="twoFactorToggle" onclick="toggleTwoFactor('twoFactorToggle')">
+                            <div class="toggle-circle"></div>
+                        </div>
+                        <div class="toggle-label">
+                            <div class="toggle-label-main">Two-Factor Authentication</div>
+                            <div class="toggle-label-desc">Enable 2FA for extra security</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HELP & FEEDBACK SECTION -->
+                <div class="section">
+                    <h2 class="section-title">
+                        <i class="fas fa-question-circle"></i> Help & Feedback
+                    </h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="issueType">Issue Type</label>
+                            <select id="issueType" name="issueType">
+                                <option value="bug">Bug Report</option>
+                                <option value="feature">Feature Suggestion</option>
+                                <option value="feedback">General Feedback</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">Subject</label>
+                            <input type="text" id="subject" name="subject" placeholder="Brief summary">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="feedbackMessage">Message</label>
+                        <textarea id="feedbackMessage" name="feedbackMessage" rows="3" placeholder="Describe your feedback in detail"></textarea>
+                    </div>
+                </div>
+
+                <!-- BUTTONS -->
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="resetForm()">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Save All Settings
+                    </button>
+                    <button type="button" class="btn-danger" onclick="handleLogout()">
+                        <i class="fas fa-sign-out-alt"></i> Log Out
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Toggle functions
+        function toggleMarket(id) {
+            document.getElementById(id).classList.toggle('active');
+        }
+
+        function toggleNotif(id) {
+            document.getElementById(id).classList.toggle('active');
+        }
+
+        function toggleDisplay(id) {
+            document.getElementById(id).classList.toggle('active');
+        }
+
+        function toggleTrack(id) {
+            document.getElementById(id).classList.toggle('active');
+        }
+
+        function toggleTwoFactor(id) {
+            document.getElementById(id).classList.toggle('active');
+        }
+
+        // Show message
+        function showMessage(text, type = 'success') {
+            const messageEl = document.getElementById('message');
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            messageEl.innerHTML = `<i class="fas ${icon}"></i> <span>${text}</span>`;
+            messageEl.className = `message show ${type}`;
+            setTimeout(() => messageEl.classList.remove('show'), 3000);
+        }
+
+        // Form submission
+        const settingsForm = document.getElementById('settingsForm');
+        if (settingsForm) {
+            settingsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Validate passwords if provided
+            const newPwd = document.getElementById('newPassword').value;
+            const confirmPwd = document.getElementById('confirmPassword').value;
+            
+            if (newPwd && newPwd !== confirmPwd) {
+                showMessage('Passwords do not match!', 'error');
+                return;
+            }
+
+            const formData = {
+                profile: {
+                    fullName: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    bio: document.getElementById('bio').value,
+                },
+                predictions: {
+                    predType: document.getElementById('predType').value,
+                    confidence: document.getElementById('confidence').value,
+                    riskLevel: document.getElementById('riskLevel').value,
+                },
+                market: {
+                    primaryMarket: document.getElementById('primaryMarket').value,
+                    nse: document.getElementById('nseToggle').classList.contains('active'),
+                    crypto: document.getElementById('cryptoToggle').classList.contains('active'),
+                    us: document.getElementById('usToggle').classList.contains('active'),
+                },
+                notifications: {
+                    buyAlerts: document.getElementById('buyAlertToggle').classList.contains('active'),
+                    sellAlerts: document.getElementById('sellAlertToggle').classList.contains('active'),
+                    predAlerts: document.getElementById('predAlertToggle').classList.contains('active'),
+                    channel: document.getElementById('alertChannel').value,
+                },
+                appearance: {
+                    theme: document.getElementById('theme').value,
+                    chartStyle: document.getElementById('chartStyle').value,
+                    showGrid: document.getElementById('gridToggle').classList.contains('active'),
+                    showLegend: document.getElementById('legendToggle').classList.contains('active'),
+                },
+                watchlist: {
+                    stocks: document.getElementById('favoriteStocks').value,
+                    trackPrice: document.getElementById('trackPriceToggle').classList.contains('active'),
+                    trackVolume: document.getElementById('trackVolToggle').classList.contains('active'),
+                },
+                security: {
+                    currentPassword: document.getElementById('currentPassword').value,
+                    newPassword: newPwd,
+                    twoFactor: document.getElementById('twoFactorToggle').classList.contains('active'),
+                },
+                feedback: {
+                    type: document.getElementById('issueType').value,
+                    subject: document.getElementById('subject').value,
+                    message: document.getElementById('feedbackMessage').value,
+                }
+            };
+
+            // Save to localStorage
+            localStorage.setItem('allSettings', JSON.stringify(formData));
+
+            // Send to backend (optional)
+            try {
+                await Promise.all([
+                    fetch('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData.profile) }),
+                    fetch('/api/predictions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData.predictions) }),
+                    fetch('/api/market', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData.market) }),
+                    fetch('/api/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData.notifications) }),
+                    fetch('/api/appearance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData.appearance) }),
+                    fetch('/api/watchlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData.watchlist) }),
+                    fetch('/api/security', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData.security) }),
+                ]);
+            } catch (err) {
+                console.log('Backend sync optional');
+            }
+
+            showMessage('All settings saved successfully! ✓', 'success');
+            });
+        }
+
+        // Handle logout
+        function handleLogout() {
+            if (confirm('Are you sure you want to log out?')) {
+                fetch('/logout', { method: 'POST' })
+                    .then(() => window.location.href = '/login')
+                    .catch(() => window.location.href = '/login');
+            }
+        }
+
+        // Reset form
+        function resetForm() {
+            if (confirm('Reset all settings to default values?')) {
+                document.getElementById('settingsForm').reset();
+                document.getElementById('confidenceValue').textContent = '70';
+                showMessage('Form reset', 'success');
+            }
+        }
+
+        // Slider value display
+        const confidenceSlider = document.getElementById('confidence');
+        if (confidenceSlider) {
+            confidenceSlider.addEventListener('input', (e) => {
+                document.getElementById('confidenceValue').textContent = e.target.value;
+            });
+        }
+
+        // Load saved settings
+        function loadSettings() {
+            const saved = localStorage.getItem('allSettings');
+            if (saved) {
+                const data = JSON.parse(saved);
+                try {
+                    // Load profile
+                    if (data.profile) {
+                        document.getElementById('fullName').value = data.profile.fullName || '';
+                        document.getElementById('email').value = data.profile.email || '';
+                        document.getElementById('bio').value = data.profile.bio || '';
+                    }
+                    // Load predictions
+                    if (data.predictions) {
+                        document.getElementById('predType').value = data.predictions.predType || 'intraday';
+                        document.getElementById('riskLevel').value = data.predictions.riskLevel || 'medium';
+                        document.getElementById('confidence').value = data.predictions.confidence || 70;
+                        document.getElementById('confidenceValue').textContent = data.predictions.confidence || 70;
+                    }
+                    // Load market
+                    if (data.market) {
+                        document.getElementById('primaryMarket').value = data.market.primaryMarket || 'NSE';
+                    }
+                    // Load appearance
+                    if (data.appearance) {
+                        document.getElementById('theme').value = data.appearance.theme || 'dark';
+                        document.getElementById('chartStyle').value = data.appearance.chartStyle || 'candlestick';
+                    }
+                    // Load watchlist
+                    if (data.watchlist) {
+                        document.getElementById('favoriteStocks').value = data.watchlist.stocks || '';
+                    }
+                } catch (e) {
+                    console.error('Error loading settings:', e);
+                }
+            }
+
+        }
+
+        // Initialize
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadSettings);
+        } else {
+            loadSettings();
+        }
+
+        // Page ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✓ Settings page ready');
+        });
+    </script>
+</body>
+</html>

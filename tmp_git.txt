@@ -1,0 +1,9 @@
+commit fce9eda63d25105807174ee70d269af995ad118a
+Author: Admin <admin@example.com>
+Date:   Mon Apr 6 23:49:46 2026 +0530
+
+    Fix UI contact page and Volatility Prediction errors
+
+ bulllens/ml_model/risk_model.py |  43 +++++--
+ bulllens/templates/index.html   | 265 +++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 282 insertions(+), 26 deletions(-)

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ page_title }}</title>
+  <style>
+    :root {
+      --bg: #eef4f1;
+      --surface: rgba(255, 255, 255, 0.94);
+      --text: #102321;
+      --muted: #5e716d;
+      --border: rgba(16, 35, 33, 0.12);
+      --accent: #1fb28c;
+      --accent-dark: #0b3b36;
+      --success-bg: rgba(0, 186, 136, 0.12);
+      --success-text: #0b7d5c;
+      --error-bg: rgba(248, 81, 73, 0.1);
+      --error-text: #b3261e;
+      --shadow: 0 28px 60px rgba(12, 34, 31, 0.12);
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Plus Jakarta Sans", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(31, 178, 140, 0.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(11, 59, 54, 0.14), transparent 24%),
+        linear-gradient(180deg, #f7fbf9 0%, var(--bg) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .auth-shell {
+      width: min(100%, 1040px);
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 28px;
+      align-items: stretch;
+    }
+
+    .auth-panel {
+      background: linear-gradient(160deg, #0d2c29 0%, #13443f 100%);
+      color: #f3fffb;
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--shadow);
+      min-height: 640px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-panel::after {
+      content: "";
+      position: absolute;
+      right: -60px;
+      bottom: -80px;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: rgba(196, 246, 13, 0.12);
+      filter: blur(6px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .brand-mark {
+      width: 16px;
+      height: 16px;
+      border-radius: 5px;
+      background: linear-gradient(135deg, #1fb28c 0%, #c4f60d 100%);
+      box-shadow: 0 0 0 8px rgba(31, 178, 140, 0.08);
+      flex-shrink: 0;
+    }
+
+    .panel-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 360px;
+    }
+
+    .step {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #d7fff3;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .panel-copy h1 {
+      margin: 0 0 14px;
+      font-size: clamp(2.4rem, 4vw, 4rem);
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+    }
+
+    .panel-copy p {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.75;
+      color: rgba(243, 255, 251, 0.8);
+    }
+
+    .flow {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 14px;
+      max-width: 360px;
+    }
+
+    .flow-item {
+      padding: 16px 18px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .flow-item strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+      color: #ffffff;
+    }
+
+    .flow-item span {
+      color: rgba(243, 255, 251, 0.72);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    .auth-card {
+      background: var(--surface);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 640px;
+      backdrop-filter: blur(16px);
+    }
+
+    .card-head {
+      margin-bottom: 24px;
+    }
+
+    .card-head h2 {
+      margin: 0 0 10px;
+      font-size: 2rem;
+      letter-spacing: -0.03em;
+    }
+
+    .card-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.96rem;
+    }
+
+    .auth-alert {
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.92rem;
+      font-weight: 600;
+    }
+
+    .auth-alert.success {
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid rgba(0, 186, 136, 0.18);
+    }
+
+    .auth-alert.error {
+      background: var(--error-bg);
+      color: var(--error-text);
+      border: 1px solid rgba(248, 81, 73, 0.18);
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 16px;
+    }
+
+    .auth-field {
+      display: grid;
+      gap: 8px;
+    }
+
+    .auth-field span {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--accent-dark);
+    }
+
+    .auth-field input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 15px 16px;
+      font: inherit;
+      font-size: 0.98rem;
+      color: var(--text);
+      background: #fbfcfc;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .auth-field input:focus {
+      border-color: rgba(31, 178, 140, 0.8);
+      box-shadow: 0 0 0 4px rgba(31, 178, 140, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .auth-submit {
+      margin-top: 4px;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      background: linear-gradient(135deg, #0b3b36 0%, #1fb28c 100%);
+      color: #ffffff;
+      font: inherit;
+      font-size: 0.98rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 16px 32px rgba(12, 46, 42, 0.16);
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .auth-submit:hover {
+      transform: translateY(-1px);
+    }
+
+    .auth-submit:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .auth-footer {
+      margin-top: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .auth-footer a {
+      color: var(--accent-dark);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 900px) {
+      .auth-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-panel,
+      .auth-card {
+        min-height: auto;
+      }
+
+      .auth-panel {
+        padding: 28px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        padding: 14px;
+      }
+
+      .auth-panel,
+      .auth-card {
+        border-radius: 22px;
+        padding: 24px 20px;
+      }
+
+      .panel-copy h1,
+      .card-head h2 {
+        font-size: 1.85rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="auth-shell">
+    <section class="auth-panel">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <span>BullLens</span>
+      </div>
+
+      <div class="panel-copy">
+        <div class="step">Step 1 of 2</div>
+        <h1>Create account</h1>
+        <p>Register first so your account details are saved in the database. Then log in and continue to the dashboard.</p>
+      </div>
+
+      <div class="flow">
+        <div class="flow-item">
+          <strong>Username, email, password</strong>
+          <span>Fill in only the details required to create your account.</span>
+        </div>
+        <div class="flow-item">
+          <strong>Account gets created</strong>
+          <span>Your information is stored for login and dashboard access.</span>
+        </div>
+        <div class="flow-item">
+          <strong>Next step</strong>
+          <span>You are redirected to login after successful registration.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="auth-card">
+      <div class="card-head">
+        <h2>Register</h2>
+        <p>Create your BullLens account to begin.</p>
+      </div>
+
+      <div id="auth-alert" class="auth-alert" hidden></div>
+
+      <form id="register-form" class="auth-form">
+        <label class="auth-field">
+          <span>Username</span>
+          <input id="username" name="username" type="text" autocomplete="username" placeholder="Choose a username" required autofocus />
+        </label>
+
+        <label class="auth-field">
+          <span>Email</span>
+          <input id="email" name="email" type="email" autocomplete="email" placeholder="Enter your email" required />
+        </label>
+
+        <label class="auth-field">
+          <span>Password</span>
+          <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="Create a password" required />
+        </label>
+
+        <button id="register-submit" class="auth-submit" type="submit">Create Account</button>
+      </form>
+
+      <div class="auth-footer">
+        <span>Already registered?</span>
+        <a href="/login">Go to login</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const alertEl = document.getElementById("auth-alert");
+    const form = document.getElementById("register-form");
+    const submitBtn = document.getElementById("register-submit");
+
+    function showAlert(message, type) {
+      alertEl.hidden = false;
+      alertEl.className = "auth-alert " + type;
+      alertEl.textContent = message;
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Creating account...";
+      alertEl.hidden = true;
+
+      const payload = {
+        username: form.username.value.trim(),
+        email: form.email.value.trim(),
+        password: form.password.value
+      };
+
+      try {
+        const response = await fetch("/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showAlert(data.detail || "Registration failed. Please try again.", "error");
+          return;
+        }
+
+        showAlert("Account created successfully. Redirecting to login...", "success");
+        const username = encodeURIComponent(payload.username);
+        setTimeout(() => {
+          window.location.href = "/login?registered=1&username=" + username;
+        }, 900);
+      } catch (error) {
+        showAlert("Network error while creating your account. Please try again.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Create Account";
+      }
+    });
+  </script>
+</body>
+</html>

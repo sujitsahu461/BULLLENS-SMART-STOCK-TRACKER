@@ -2,7 +2,7 @@
 
 BullLens is a FastAPI-based stock tracking app for Indian NSE users. It includes a browser-based dashboard, session auth, MySQL-backed watchlists, and ML endpoints for volatility, price, and YOLO-based vision inference.
 
-This README now reflects the current project state as of March 22, 2026, including the auth flow polish and the YOLO prediction fixes completed in this workspace.
+This README now reflects the current project state as of April 7, 2026. Recent updates include fixes for the Volatility Predictor, accurate historical data fetching for stock predictions, Contact Us page redesign, and auth flow polish.
 
 ## Current Status
 

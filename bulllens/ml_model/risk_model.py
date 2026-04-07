@@ -216,6 +216,9 @@ def _load_symbol_history(symbol, days=180):
             if not isinstance(df, pd.DataFrame) or df.empty:
                 raise RuntimeError("no_history")
 
+            # Clean rows with missing data
+            df = df.dropna(subset=['Close'])
+
             df = df.reset_index()
 
             # Flatten MultiIndex columns (yfinance >= 0.2 sometimes returns them)

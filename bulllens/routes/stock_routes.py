@@ -80,6 +80,9 @@ def get_yfinance_data(symbol: str, period: str = "3mo"):
         ticker = yf.Ticker(normalized)
         hist = ticker.history(period=period)
         
+        # Drop rows missing critical data (e.g., market holidays)
+        hist = hist.dropna(subset=['Close', 'Open'])
+        
         if hist.empty:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -89,8 +92,12 @@ def get_yfinance_data(symbol: str, period: str = "3mo"):
         # Get latest data
         latest = hist.iloc[-1]
         previous_close = hist.iloc[-2]["Close"] if len(hist) > 1 else latest["Close"]
-        change_pct = ((latest["Close"] - previous_close) / previous_close * 100) if previous_close > 0 else 0
         
+        try:
+            change_pct = ((float(latest["Close"]) - float(previous_close)) / float(previous_close) * 100) if float(previous_close) > 0 else 0.0
+        except Exception:
+            change_pct = 0.0
+            
         # Format history
         history = []
         for date, row in hist.iterrows():
